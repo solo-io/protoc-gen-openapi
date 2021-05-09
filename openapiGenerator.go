@@ -218,7 +218,7 @@ func (g *openapiGenerator) generateFile(name string,
 		} else if pd := g.generateDescription(g.currentPackage); pd != "" {
 			description = pd
 		} else {
-			description = "OpenAPI Spec for Istio APIs."
+			description = "OpenAPI Spec for Solo APIs."
 		}
 		// derive the API version from the package name
 		// which is a convention for Istio APIs.
@@ -231,7 +231,7 @@ func (g *openapiGenerator) generateFile(name string,
 		s := strings.Split(p, ".")
 		version = s[len(s)-1]
 	} else {
-		description = "OpenAPI Spec for Istio APIs."
+		description = "OpenAPI Spec for Solo APIs."
 	}
 
 	c := openapi3.NewComponents()
@@ -285,10 +285,7 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	o.Description = g.generateDescription(message)
 	oneof := make(map[int32][]*openapi3.Schema)
 	for _, field := range message.Fields {
-		// skip deprecated field as it is not supported by Kubernetes yet.
-		if field.GetOptions().GetDeprecated() {
-			continue
-		}
+
 		if field.OneofIndex == nil {
 			sr := g.fieldTypeRef(field)
 			if g.useRef && sr.Ref != "" {
@@ -306,6 +303,17 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 		o.WithProperty(message.GetOneofDecl()[k].GetName(), openapi3.NewOneOfSchema(v...))
 	}
 	return o
+}
+
+func (g *openapiGenerator) generateSoloStatusMessageSchema(statusField *protomodel.FieldDescriptor, message *protomodel.MessageDescriptor) *openapi3.Schema {
+	// The proto definition for core.solo.io.Status is recursive
+	// and results in a stack-overflow when generating the resulting openapi schema.
+	// The field is also read-only, in that it is only written to by the system and read by the user.
+	// Therefore, we don't need the most restrictive schema to validate the message.
+	// The quickest solution for this is to generate a generic object for the Status schema
+	statusSchema := openapi3.NewObjectSchema()
+	statusSchema.Description = g.generateDescription(message)
+	return statusSchema
 }
 
 func (g *openapiGenerator) generateEnum(enum *protomodel.EnumDescriptor, allSchemas map[string]*openapi3.SchemaRef) {
@@ -383,7 +391,12 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 				schema = openapi3.NewObjectSchema().WithAdditionalProperties(sr.Value)
 			}
 		} else {
-			schema = g.generateMessageSchema(msg)
+			// Avoid a stack-overflow caused by a recursive proto definition
+			if strings.HasSuffix(field.GetTypeName(), "core.solo.io.Status") {
+				schema = g.generateSoloStatusMessageSchema(field, msg)
+			} else {
+				schema = g.generateMessageSchema(msg)
+			}
 		}
 
 	case descriptor.FieldDescriptorProto_TYPE_BYTES:
