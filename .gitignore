@@ -1,0 +1,26 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# OSX Files
+.DS_Store
+
+# Test binary, build with `go test -c`
+*.test
+
+# IDEA files
+*.idea/
+.vscode
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+vendor*/
+_output/
+/solo-kit-gen
+**/doc-gen-test-*
+
+# Local binary produced by make build
+protoc-gen-openapi

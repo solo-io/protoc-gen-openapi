@@ -22,13 +22,13 @@ import (
 	"path"
 	"strings"
 
+	"github.com/sam-heilbron/protoc-gen-openapi/pkg/protomodel"
+
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/ghodss/yaml"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
-
-	"istio.io/tools/pkg/protomodel"
 )
 
 // Some special types with predefined schemas.

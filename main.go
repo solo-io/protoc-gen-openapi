@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"strings"
 
-	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"github.com/sam-heilbron/protoc-gen-openapi/pkg/protocgen"
+	"github.com/sam-heilbron/protoc-gen-openapi/pkg/protomodel"
 
-	"istio.io/tools/pkg/protocgen"
-	"istio.io/tools/pkg/protomodel"
+	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 )
 
 // Breaks the comma-separated list of key=value pairs
