@@ -49,6 +49,15 @@ var specialTypes = map[string]openapi3.Schema{
 	},
 }
 
+// Some special types with predefined schemas.
+// This is to catch cases where solo apis contain recursive definitions
+// Normally these would result in stack-overflow errors when generating the open api schema
+// The imperfect solution, is to just genrate an empty object for these types
+var specialSoloTypes = map[string]*openapi3.Schema{
+	"core.solo.io.Status": openapi3.NewObjectSchema().WithAnyAdditionalProperties(),
+	"ratelimit.api.solo.io.Descriptor": openapi3.NewObjectSchema().WithAnyAdditionalProperties(),
+}
+
 type openapiGenerator struct {
 	buffer     bytes.Buffer
 	model      *protomodel.Model
@@ -305,17 +314,6 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	return o
 }
 
-func (g *openapiGenerator) generateSoloStatusMessageSchema(statusField *protomodel.FieldDescriptor, message *protomodel.MessageDescriptor) *openapi3.Schema {
-	// The proto definition for core.solo.io.Status is recursive
-	// and results in a stack-overflow when generating the resulting openapi schema.
-	// The field is also read-only, in that it is only written to by the system and read by the user.
-	// Therefore, we don't need the most restrictive schema to validate the message.
-	// The quickest solution for this is to generate a generic object for the Status schema
-	statusSchema := openapi3.NewObjectSchema()
-	statusSchema.Description = g.generateDescription(message)
-	return statusSchema
-}
-
 func (g *openapiGenerator) generateEnum(enum *protomodel.EnumDescriptor, allSchemas map[string]*openapi3.SchemaRef) {
 	o := g.generateEnumSchema(enum)
 	allSchemas[g.absoluteName(enum)] = o.NewRef()
@@ -379,6 +377,9 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 		msg := field.FieldType.(*protomodel.MessageDescriptor)
 		if s, ok := specialTypes[g.absoluteName(msg)]; ok {
 			schema = &s
+		} else if soloSchema, ok := specialSoloTypes[g.absoluteName(msg)]; ok {
+			// Allow for defining special Solo types
+			schema = soloSchema
 		} else if msg.GetOptions().GetMapEntry() {
 			isMap = true
 			sr := g.fieldTypeRef(msg.Fields[1])
@@ -391,12 +392,7 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 				schema = openapi3.NewObjectSchema().WithAdditionalProperties(sr.Value)
 			}
 		} else {
-			// Avoid a stack-overflow caused by a recursive proto definition
-			if strings.HasSuffix(field.GetTypeName(), "core.solo.io.Status") {
-				schema = g.generateSoloStatusMessageSchema(field, msg)
-			} else {
-				schema = g.generateMessageSchema(msg)
-			}
+			schema = g.generateMessageSchema(msg)
 		}
 
 	case descriptor.FieldDescriptorProto_TYPE_BYTES:
