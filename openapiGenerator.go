@@ -54,8 +54,30 @@ var specialTypes = map[string]openapi3.Schema{
 // Normally these would result in stack-overflow errors when generating the open api schema
 // The imperfect solution, is to just genrate an empty object for these types
 var specialSoloTypes = map[string]*openapi3.Schema{
-	"core.solo.io.Status": openapi3.NewObjectSchema().WithAnyAdditionalProperties(),
-	"ratelimit.api.solo.io.Descriptor": openapi3.NewObjectSchema().WithAnyAdditionalProperties(),
+	"core.solo.io.Status": {
+		Type:       "object",
+		Properties: make(map[string]*openapi3.SchemaRef),
+		ExtensionProps: openapi3.ExtensionProps{
+			Extensions: map[string]interface{}{
+				"x-kubernetes-preserve-unknown-fields": true,
+			},
+		},
+	},
+	"core.solo.io.Metadata": {
+		Type:       "object",
+		Properties: map[string]*openapi3.SchemaRef{
+			"name": nil,
+		},
+	},
+	"ratelimit.api.solo.io.Descriptor": {
+		Type:       "object",
+		Properties: make(map[string]*openapi3.SchemaRef),
+		ExtensionProps: openapi3.ExtensionProps{
+			Extensions: map[string]interface{}{
+				"x-kubernetes-preserve-unknown-fields": true,
+			},
+		},
+	},
 }
 
 type openapiGenerator struct {
@@ -285,6 +307,22 @@ func (g *openapiGenerator) generateMessage(message *protomodel.MessageDescriptor
 	}
 }
 
+func (g *openapiGenerator) generateSoloMessageSchema(message *protomodel.MessageDescriptor, customSchema *openapi3.Schema) *openapi3.Schema {
+	for _, field := range message.Fields {
+
+		// If this field is defined as a property on the customSchema, use it!
+		for propName, _ := range customSchema.Properties {
+			if propName == *field.Name {
+
+				sr := g.fieldTypeRef(field)
+				customSchema.WithProperty(field.GetName(), sr.Value)
+			}
+		}
+	}
+
+	return customSchema
+}
+
 func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDescriptor) *openapi3.Schema {
 	// skip MapEntry message because we handle map using the map's repeated field.
 	if message.GetOptions().GetMapEntry() {
@@ -379,7 +417,7 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 			schema = &s
 		} else if soloSchema, ok := specialSoloTypes[g.absoluteName(msg)]; ok {
 			// Allow for defining special Solo types
-			schema = soloSchema
+			schema = g.generateSoloMessageSchema(msg, soloSchema)
 		} else if msg.GetOptions().GetMapEntry() {
 			isMap = true
 			sr := g.fieldTypeRef(msg.Fields[1])
