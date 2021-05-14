@@ -47,6 +47,15 @@ var specialTypes = map[string]openapi3.Schema{
 			},
 		},
 	},
+	"google.protobuf.Any": {
+		Type:       "object",
+		Properties: make(map[string]*openapi3.SchemaRef),
+		ExtensionProps: openapi3.ExtensionProps{
+			Extensions: map[string]interface{}{
+				"x-kubernetes-preserve-unknown-fields": true,
+			},
+		},
+	},
 }
 
 // Some special types with predefined schemas.
@@ -330,25 +339,12 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	}
 	o := openapi3.NewObjectSchema()
 	o.Description = g.generateDescription(message)
-	oneof := make(map[int32][]*openapi3.Schema)
-	for _, field := range message.Fields {
 
-		if field.OneofIndex == nil {
-			sr := g.fieldTypeRef(field)
-			if g.useRef && sr.Ref != "" {
-				// in `$ref`, the value of the schema is not in the output.
-				sr.Value = nil
-				o.WithPropertyRef(field.GetName(), sr)
-			} else {
-				o.WithProperty(field.GetName(), sr.Value)
-			}
-		} else {
-			oneof[*field.OneofIndex] = append(oneof[*field.OneofIndex], g.fieldType(field))
-		}
+	for _, field := range message.Fields {
+		sr := g.fieldTypeRef(field)
+		o.WithProperty(field.GetName(), sr.Value)
 	}
-	for k, v := range oneof {
-		o.WithProperty(message.GetOneofDecl()[k].GetName(), openapi3.NewOneOfSchema(v...))
-	}
+
 	return o
 }
 
