@@ -36,6 +36,12 @@ var specialTypes = map[string]openapi3.Schema{
 	"google.protobuf.Struct": {
 		Type:       "object",
 		Properties: make(map[string]*openapi3.SchemaRef),
+		AdditionalPropertiesAllowed: openapi3.BoolPtr(true),
+		AdditionalProperties: &openapi3.SchemaRef{
+			Value: &openapi3.Schema{
+				Type: "string",
+			},
+		},
 	},
 	"google.protobuf.ListValue": {
 		Properties: map[string]*openapi3.SchemaRef{
@@ -62,7 +68,6 @@ var specialSoloTypes = map[string]*openapi3.Schema{
 	},
 	"core.solo.io.Metadata": {
 		Type:       "object",
-		Properties: map[string]*openapi3.SchemaRef{},
 	},
 	"ratelimit.api.solo.io.Descriptor": {
 		Type:       "object",
