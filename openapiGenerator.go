@@ -62,9 +62,7 @@ var specialSoloTypes = map[string]*openapi3.Schema{
 	},
 	"core.solo.io.Metadata": {
 		Type:       "object",
-		Properties: map[string]*openapi3.SchemaRef{
-			"name": nil,
-		},
+		Properties: map[string]*openapi3.SchemaRef{},
 	},
 	"ratelimit.api.solo.io.Descriptor": {
 		Type:       "object",
