@@ -34,25 +34,13 @@ import (
 // Some special types with predefined schemas.
 var specialTypes = map[string]openapi3.Schema{
 	"google.protobuf.Struct": {
-		Properties: map[string]*openapi3.SchemaRef{
-			"fields": {
-				Value: openapi3.NewObjectSchema().WithAnyAdditionalProperties(),
-			},
-		},
+		Type:       "object",
+		Properties: make(map[string]*openapi3.SchemaRef),
 	},
 	"google.protobuf.ListValue": {
 		Properties: map[string]*openapi3.SchemaRef{
 			"values": {
 				Value: openapi3.NewArraySchema().WithItems(openapi3.NewObjectSchema()),
-			},
-		},
-	},
-	"google.protobuf.Any": {
-		Type:       "object",
-		Properties: make(map[string]*openapi3.SchemaRef),
-		ExtensionProps: openapi3.ExtensionProps{
-			Extensions: map[string]interface{}{
-				"x-kubernetes-preserve-unknown-fields": true,
 			},
 		},
 	},
