@@ -33,16 +33,6 @@ import (
 
 // Some special types with predefined schemas.
 var specialTypes = map[string]openapi3.Schema{
-	"google.protobuf.Struct": {
-		Type:       "object",
-		Properties: make(map[string]*openapi3.SchemaRef),
-		AdditionalPropertiesAllowed: openapi3.BoolPtr(true),
-		AdditionalProperties: &openapi3.SchemaRef{
-			Value: &openapi3.Schema{
-				Type: "string",
-			},
-		},
-	},
 	"google.protobuf.ListValue": {
 		Properties: map[string]*openapi3.SchemaRef{
 			"values": {
@@ -70,6 +60,15 @@ var specialSoloTypes = map[string]*openapi3.Schema{
 		Type:       "object",
 	},
 	"ratelimit.api.solo.io.Descriptor": {
+		Type:       "object",
+		Properties: make(map[string]*openapi3.SchemaRef),
+		ExtensionProps: openapi3.ExtensionProps{
+			Extensions: map[string]interface{}{
+				"x-kubernetes-preserve-unknown-fields": true,
+			},
+		},
+	},
+	"google.protobuf.Struct": {
 		Type:       "object",
 		Properties: make(map[string]*openapi3.SchemaRef),
 		ExtensionProps: openapi3.ExtensionProps{
@@ -308,18 +307,6 @@ func (g *openapiGenerator) generateMessage(message *protomodel.MessageDescriptor
 }
 
 func (g *openapiGenerator) generateSoloMessageSchema(message *protomodel.MessageDescriptor, customSchema *openapi3.Schema) *openapi3.Schema {
-	for _, field := range message.Fields {
-
-		// If this field is defined as a property on the customSchema, use it!
-		for propName, _ := range customSchema.Properties {
-			if propName == *field.Name {
-
-				sr := g.fieldTypeRef(field)
-				customSchema.WithProperty(field.GetName(), sr.Value)
-			}
-		}
-	}
-
 	return customSchema
 }
 
