@@ -1,6 +1,6 @@
 module github.com/sam-heilbron/protoc-gen-openapi
 
-go 1.12
+go 1.16
 
 require (
 	github.com/getkin/kin-openapi v0.1.1-0.20190507152207-d3180292eead
