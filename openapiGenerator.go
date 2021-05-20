@@ -65,6 +65,18 @@ var specialSoloTypes = map[string]openapi3.Schema{
 			},
 		},
 	},
+	"core.solo.io.Metadata": {
+		Type:       "object",
+	},
+	"ratelimit.api.solo.io.Descriptor": {
+		Type:       "object",
+		Properties: make(map[string]*openapi3.SchemaRef),
+		ExtensionProps: openapi3.ExtensionProps{
+			Extensions: map[string]interface{}{
+				"x-kubernetes-preserve-unknown-fields": true,
+			},
+		},
+	},
 }
 
 type openapiGenerator struct {
