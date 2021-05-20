@@ -323,7 +323,7 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 
 	for _, field := range message.Fields {
 		sr := g.fieldTypeRef(field)
-		o.WithProperty(field.GetName(), sr.Value)
+		o.WithProperty(g.fieldName(field), sr.Value)
 	}
 
 	return o
@@ -441,6 +441,10 @@ func (g *openapiGenerator) fieldTypeRef(field *protomodel.FieldDescriptor) *open
 		}
 	}
 	return openapi3.NewSchemaRef(ref, s)
+}
+
+func (g *openapiGenerator) fieldName(field *protomodel.FieldDescriptor) string {
+	return field.GetJsonName()
 }
 
 func (g *openapiGenerator) relativeName(desc protomodel.CoreDesc) string {
