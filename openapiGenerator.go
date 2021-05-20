@@ -46,20 +46,8 @@ var specialTypes = map[string]openapi3.Schema{
 // This is to catch cases where solo apis contain recursive definitions
 // Normally these would result in stack-overflow errors when generating the open api schema
 // The imperfect solution, is to just genrate an empty object for these types
-var specialSoloTypes = map[string]*openapi3.Schema{
+var specialSoloTypes = map[string]openapi3.Schema{
 	"core.solo.io.Status": {
-		Type:       "object",
-		Properties: make(map[string]*openapi3.SchemaRef),
-		ExtensionProps: openapi3.ExtensionProps{
-			Extensions: map[string]interface{}{
-				"x-kubernetes-preserve-unknown-fields": true,
-			},
-		},
-	},
-	"core.solo.io.Metadata": {
-		Type:       "object",
-	},
-	"ratelimit.api.solo.io.Descriptor": {
 		Type:       "object",
 		Properties: make(map[string]*openapi3.SchemaRef),
 		ExtensionProps: openapi3.ExtensionProps{
@@ -307,7 +295,10 @@ func (g *openapiGenerator) generateMessage(message *protomodel.MessageDescriptor
 }
 
 func (g *openapiGenerator) generateSoloMessageSchema(message *protomodel.MessageDescriptor, customSchema *openapi3.Schema) *openapi3.Schema {
-	return customSchema
+	o := customSchema
+	o.Description = g.generateDescription(message)
+
+	return o
 }
 
 func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDescriptor) *openapi3.Schema {
@@ -391,7 +382,7 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 			schema = &s
 		} else if soloSchema, ok := specialSoloTypes[g.absoluteName(msg)]; ok {
 			// Allow for defining special Solo types
-			schema = g.generateSoloMessageSchema(msg, soloSchema)
+			schema = g.generateSoloMessageSchema(msg, &soloSchema)
 		} else if msg.GetOptions().GetMapEntry() {
 			isMap = true
 			sr := g.fieldTypeRef(msg.Fields[1])
