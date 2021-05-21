@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path"
 	"strings"
@@ -30,17 +31,6 @@ import (
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 )
-
-// Some special types with predefined schemas.
-var specialTypes = map[string]openapi3.Schema{
-	"google.protobuf.ListValue": {
-		Properties: map[string]*openapi3.SchemaRef{
-			"values": {
-				Value: openapi3.NewArraySchema().WithItems(openapi3.NewObjectSchema()),
-			},
-		},
-	},
-}
 
 // Some special types with predefined schemas.
 // This is to catch cases where solo apis contain recursive definitions
@@ -56,17 +46,8 @@ var specialSoloTypes = map[string]openapi3.Schema{
 			},
 		},
 	},
-	"google.protobuf.Struct": {
-		Type:       "object",
-		Properties: make(map[string]*openapi3.SchemaRef),
-		ExtensionProps: openapi3.ExtensionProps{
-			Extensions: map[string]interface{}{
-				"x-kubernetes-preserve-unknown-fields": true,
-			},
-		},
-	},
 	"core.solo.io.Metadata": {
-		Type:       "object",
+		Type: "object",
 	},
 	"ratelimit.api.solo.io.Descriptor": {
 		Type:       "object",
@@ -77,6 +58,40 @@ var specialSoloTypes = map[string]openapi3.Schema{
 			},
 		},
 	},
+	"google.protobuf.ListValue": {
+		Properties: map[string]*openapi3.SchemaRef{
+			"values": {
+				Value: openapi3.NewArraySchema().WithItems(openapi3.NewObjectSchema()),
+			},
+		},
+	},
+	"google.protobuf.Struct": {
+		Type:       "object",
+		Properties: make(map[string]*openapi3.SchemaRef),
+		ExtensionProps: openapi3.ExtensionProps{
+			Extensions: map[string]interface{}{
+				"x-kubernetes-preserve-unknown-fields": true,
+			},
+		},
+	},
+	"google.protobuf.Any": {
+		Type:       "object",
+		Properties: make(map[string]*openapi3.SchemaRef),
+		ExtensionProps: openapi3.ExtensionProps{
+			Extensions: map[string]interface{}{
+				"x-kubernetes-preserve-unknown-fields": true,
+			},
+		},
+	},
+	"google.protobuf.BoolValue":   *openapi3.NewBoolSchema().WithNullable(),
+	"google.protobuf.StringValue": *openapi3.NewStringSchema().WithNullable(),
+	"google.protobuf.DoubleValue": *openapi3.NewFloat64Schema().WithNullable(),
+	"google.protobuf.Int32Value":  *openapi3.NewIntegerSchema().WithNullable().WithMin(math.MinInt32).WithMax(math.MaxInt32),
+	"google.protobuf.UInt32Value": *openapi3.NewIntegerSchema().WithNullable().WithMin(0).WithMax(math.MaxUint32),
+	"google.protobuf.FloatValue":  *openapi3.NewFloat64Schema().WithNullable(),
+	"google.protobuf.Duration":    *openapi3.NewStringSchema(),
+	"google.protobuf.Empty":       *openapi3.NewObjectSchema().WithMaxProperties(0),
+	"google.protobuf.Timestamp":   *openapi3.NewStringSchema().WithFormat("date-time"),
 }
 
 type openapiGenerator struct {
@@ -390,9 +405,7 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 
 	case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
 		msg := field.FieldType.(*protomodel.MessageDescriptor)
-		if s, ok := specialTypes[g.absoluteName(msg)]; ok {
-			schema = &s
-		} else if soloSchema, ok := specialSoloTypes[g.absoluteName(msg)]; ok {
+		if soloSchema, ok := specialSoloTypes[g.absoluteName(msg)]; ok {
 			// Allow for defining special Solo types
 			schema = g.generateSoloMessageSchema(msg, &soloSchema)
 		} else if msg.GetOptions().GetMapEntry() {
