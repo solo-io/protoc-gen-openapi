@@ -350,14 +350,26 @@ func (g *openapiGenerator) generateEnum(enum *protomodel.EnumDescriptor, allSche
 }
 
 func (g *openapiGenerator) generateEnumSchema(enum *protomodel.EnumDescriptor) *openapi3.Schema {
+	/**
+	The out of the box solution created an enum like:
+		enum:
+		- - option_a
+		  - option_b
+		  - option_c
+
+	Instead, what we want is:
+		enum:
+		- option_a
+		- option_b
+		- option_c
+	*/
 	o := openapi3.NewStringSchema()
 	o.Description = g.generateDescription(enum)
 	values := enum.GetValue()
-	enumNames := make([]string, len(values))
-	for i, v := range values {
-		enumNames[i] = v.GetName()
+	for _, v := range values {
+		o.Enum = append(o.Enum, v.GetName())
 	}
-	o.WithEnum(enumNames)
+	o.Type = "string"
 	return o
 }
 
