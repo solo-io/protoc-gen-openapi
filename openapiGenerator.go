@@ -113,6 +113,9 @@ type openapiGenerator struct {
 }
 
 type DescriptionConfiguration struct {
+	// Whether or not to include a description in the generated open api schema
+	IncludeDescriptionInSchema bool
+
 	// The maximum number of characters to include in a description
 	// If IncludeDescriptionsInSchema is set to false, this will be ignored
 	// A 0 value will be interpreted as "include all characters"
@@ -404,6 +407,10 @@ func (g *openapiGenerator) absoluteName(desc protomodel.CoreDesc) string {
 // converts the first section of the leading comment or the description of the proto
 // to a single line of description.
 func (g *openapiGenerator) generateDescription(desc protomodel.CoreDesc) string {
+	if !g.descriptionConfiguration.IncludeDescriptionInSchema {
+		return ""
+	}
+
 	c := strings.TrimSpace(desc.Location().GetLeadingComments())
 	t := strings.Split(c, "\n\n")[0]
 	// omit the comment that starts with `$`.

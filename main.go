@@ -50,6 +50,7 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 	yaml := false
 	useRef := false
 	maxCharactersInDescription := 0
+	includeDescription := true
 
 	p := extractParams(request.GetParameter())
 	for k, v := range p {
@@ -91,6 +92,15 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 			if err != nil {
 				return nil, fmt.Errorf("unknown value '%s' for max_description_characters", v)
 			}
+		} else if k == "include_description" {
+			switch strings.ToLower(v) {
+			case "true":
+				includeDescription = true
+			case "false":
+				includeDescription = false
+			default:
+				return nil, fmt.Errorf("unknown value '%s' for include_description", v)
+			}
 		} else {
 			return nil, fmt.Errorf("unknown argument '%s' specified", k)
 		}
@@ -108,7 +118,8 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 	}
 
 	descriptionConfiguration := &DescriptionConfiguration{
-		MaxDescriptionCharacters: maxCharactersInDescription,
+		MaxDescriptionCharacters:   maxCharactersInDescription,
+		IncludeDescriptionInSchema: includeDescription,
 	}
 
 	g := newOpenAPIGenerator(m, perFile, singleFile, yaml, useRef, descriptionConfiguration)
