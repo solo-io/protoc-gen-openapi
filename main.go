@@ -16,6 +16,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/sam-heilbron/protoc-gen-openapi/pkg/protocgen"
@@ -48,6 +49,7 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 	singleFile := false
 	yaml := false
 	useRef := false
+	maxCharactersInDescription := 0
 
 	p := extractParams(request.GetParameter())
 	for k, v := range p {
@@ -83,6 +85,12 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 			default:
 				return nil, fmt.Errorf("unknown value '%s' for use_ref", v)
 			}
+		} else if k == "max_description_characters" {
+			var err error
+			maxCharactersInDescription, err = strconv.Atoi(v)
+			if err != nil {
+				return nil, fmt.Errorf("unknown value '%s' for max_description_characters", v)
+			}
 		} else {
 			return nil, fmt.Errorf("unknown argument '%s' specified", k)
 		}
@@ -99,7 +107,11 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 		filesToGen[fd] = true
 	}
 
-	g := newOpenAPIGenerator(m, perFile, singleFile, yaml, useRef)
+	descriptionConfiguration := &DescriptionConfiguration{
+		MaxDescriptionCharacters: maxCharactersInDescription,
+	}
+
+	g := newOpenAPIGenerator(m, perFile, singleFile, yaml, useRef, descriptionConfiguration)
 	return g.generateOutput(filesToGen)
 }
 

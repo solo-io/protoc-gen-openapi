@@ -107,15 +107,27 @@ type openapiGenerator struct {
 	currentFrontMatterProvider *protomodel.FileDescriptor
 
 	messages map[string]*protomodel.MessageDescriptor
+
+	// @solo.io customizations to limit length of generated descriptions
+	descriptionConfiguration *DescriptionConfiguration
 }
 
-func newOpenAPIGenerator(model *protomodel.Model, perFile bool, singleFile bool, yaml bool, useRef bool) *openapiGenerator {
+type DescriptionConfiguration struct {
+	// The maximum number of characters to include in a description
+	// If IncludeDescriptionsInSchema is set to false, this will be ignored
+	// A 0 value will be interpreted as "include all characters"
+	// Default: 0
+	MaxDescriptionCharacters int
+}
+
+func newOpenAPIGenerator(model *protomodel.Model, perFile bool, singleFile bool, yaml bool, useRef bool, descriptionConfiguration *DescriptionConfiguration) *openapiGenerator {
 	return &openapiGenerator{
-		model:      model,
-		perFile:    perFile,
-		singleFile: singleFile,
-		yaml:       yaml,
-		useRef:     useRef,
+		model:                    model,
+		perFile:                  perFile,
+		singleFile:               singleFile,
+		yaml:                     yaml,
+		useRef:                   useRef,
+		descriptionConfiguration: descriptionConfiguration,
 	}
 }
 
@@ -328,6 +340,17 @@ func (g *openapiGenerator) generateSoloMessageSchema(message *protomodel.Message
 	return o
 }
 
+func (g *openapiGenerator) generateSoloInt64Schema() *openapi3.Schema {
+	schema := openapi3.NewInt64Schema()
+	schema.ExtensionProps = openapi3.ExtensionProps{
+		Extensions: map[string]interface{}{
+			"x-kubernetes-int-or-string": true,
+		},
+	}
+
+	return schema
+}
+
 func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDescriptor) *openapi3.Schema {
 	// skip MapEntry message because we handle map using the map's repeated field.
 	if message.GetOptions().GetMapEntry() {
@@ -387,7 +410,14 @@ func (g *openapiGenerator) generateDescription(desc protomodel.CoreDesc) string 
 	if strings.HasPrefix(t, "$") {
 		return ""
 	}
-	return strings.Join(strings.Fields(t), " ")
+
+	fullDescription := strings.Join(strings.Fields(t), " ")
+	maxCharacters := g.descriptionConfiguration.MaxDescriptionCharacters
+	if maxCharacters > 0 && len(fullDescription) > maxCharacters {
+		// return the first [maxCharacters] characters, including an ellipsis to mark that it has been truncated
+		return fmt.Sprintf("%s...", fullDescription[0:maxCharacters])
+	}
+	return fullDescription
 }
 
 func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi3.Schema {
@@ -401,10 +431,10 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 		schema = openapi3.NewInt32Schema()
 
 	case descriptor.FieldDescriptorProto_TYPE_INT64, descriptor.FieldDescriptorProto_TYPE_SINT64, descriptor.FieldDescriptorProto_TYPE_SFIXED64:
-		schema = openapi3.NewInt64Schema()
+		schema = g.generateSoloInt64Schema()
 
 	case descriptor.FieldDescriptorProto_TYPE_UINT64, descriptor.FieldDescriptorProto_TYPE_FIXED64:
-		schema = openapi3.NewInt64Schema()
+		schema = g.generateSoloInt64Schema()
 
 	case descriptor.FieldDescriptorProto_TYPE_UINT32, descriptor.FieldDescriptorProto_TYPE_FIXED32:
 		schema = openapi3.NewInt32Schema()
