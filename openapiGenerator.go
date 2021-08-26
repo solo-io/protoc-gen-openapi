@@ -110,6 +110,10 @@ type openapiGenerator struct {
 
 	// @solo.io customizations to limit length of generated descriptions
 	descriptionConfiguration *DescriptionConfiguration
+
+	// @solo.io customization to support enum validation schemas with int or string values
+	// we need to support this since some controllers marshal enums as integers and others as strings
+	enumAsIntOrString bool
 }
 
 type DescriptionConfiguration struct {
@@ -123,7 +127,7 @@ type DescriptionConfiguration struct {
 	MaxDescriptionCharacters int
 }
 
-func newOpenAPIGenerator(model *protomodel.Model, perFile bool, singleFile bool, yaml bool, useRef bool, descriptionConfiguration *DescriptionConfiguration) *openapiGenerator {
+func newOpenAPIGenerator(model *protomodel.Model, perFile bool, singleFile bool, yaml bool, useRef bool, descriptionConfiguration *DescriptionConfiguration, enumAsIntOrString bool) *openapiGenerator {
 	return &openapiGenerator{
 		model:                    model,
 		perFile:                  perFile,
@@ -131,6 +135,7 @@ func newOpenAPIGenerator(model *protomodel.Model, perFile bool, singleFile bool,
 		yaml:                     yaml,
 		useRef:                   useRef,
 		descriptionConfiguration: descriptionConfiguration,
+		enumAsIntOrString:        enumAsIntOrString,
 	}
 }
 
@@ -391,11 +396,24 @@ func (g *openapiGenerator) generateEnumSchema(enum *protomodel.EnumDescriptor) *
 	*/
 	o := openapi3.NewStringSchema()
 	o.Description = g.generateDescription(enum)
+
+	// If the schema should be int or string, mark it as such
+	if g.enumAsIntOrString {
+		o.ExtensionProps = openapi3.ExtensionProps{
+			Extensions: map[string]interface{}{
+				"x-kubernetes-int-or-string": true,
+			},
+		}
+		return o
+	}
+
+	// otherwise, return define the expected string values
 	values := enum.GetValue()
 	for _, v := range values {
 		o.Enum = append(o.Enum, v.GetName())
 	}
 	o.Type = "string"
+
 	return o
 }
 

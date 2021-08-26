@@ -51,6 +51,7 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 	useRef := false
 	maxCharactersInDescription := 0
 	includeDescription := true
+	enumAsIntOrString := false
 
 	p := extractParams(request.GetParameter())
 	for k, v := range p {
@@ -101,6 +102,15 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 			default:
 				return nil, fmt.Errorf("unknown value '%s' for include_description", v)
 			}
+		} else if k == "enum_as_int_or_string" {
+			switch strings.ToLower(v) {
+			case "true":
+				enumAsIntOrString = true
+			case "false":
+				enumAsIntOrString = false
+			default:
+				return nil, fmt.Errorf("unknown value '%s' for enum_as_int_or_string", v)
+			}
 		} else {
 			return nil, fmt.Errorf("unknown argument '%s' specified", k)
 		}
@@ -122,7 +132,7 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 		IncludeDescriptionInSchema: includeDescription,
 	}
 
-	g := newOpenAPIGenerator(m, perFile, singleFile, yaml, useRef, descriptionConfiguration)
+	g := newOpenAPIGenerator(m, perFile, singleFile, yaml, useRef, descriptionConfiguration, enumAsIntOrString)
 	return g.generateOutput(filesToGen)
 }
 
