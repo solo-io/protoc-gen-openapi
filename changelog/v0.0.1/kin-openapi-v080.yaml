@@ -1,0 +1,6 @@
+changelog:
+  - type: DEPENDENCY_BUMP
+    issueLink: https://github.com/solo-io/protoc-gen-openapi/issues/1
+    dependencyOwner: getKin
+    dependencyRepo: kin-openapi
+    dependencyTag: v0.80.0

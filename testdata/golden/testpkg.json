@@ -9,34 +9,33 @@
       "testpkg.Days": {
         "description": "Some days",
         "enum": [
-          [
-            "MONDAY",
-            "TUESDAY",
-            "WEDNESDAY"
-          ]
+          "MONDAY",
+          "TUESDAY",
+          "WEDNESDAY"
         ],
         "type": "string"
       },
       "testpkg.Msg1": {
         "properties": {
-          "bool_field": {
+          "boolField": {
             "type": "boolean"
           },
-          "double_field": {
+          "doubleField": {
             "type": "number"
           },
-          "float_field": {
+          "floatField": {
             "type": "number"
           },
-          "int32_field": {
+          "int32Field": {
             "format": "int32",
             "type": "integer"
           },
-          "int64_field": {
+          "int64Field": {
             "format": "int64",
-            "type": "integer"
+            "type": "integer",
+            "x-kubernetes-int-or-string": true
           },
-          "string_field": {
+          "stringField": {
             "type": "string"
           },
           "test2": {

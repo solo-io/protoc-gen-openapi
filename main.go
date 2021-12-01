@@ -19,8 +19,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sam-heilbron/protoc-gen-openapi/pkg/protocgen"
-	"github.com/sam-heilbron/protoc-gen-openapi/pkg/protomodel"
+	"github.com/solo-io/protoc-gen-openapi/pkg/protocgen"
+	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
 
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 )

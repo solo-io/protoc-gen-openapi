@@ -23,7 +23,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/sam-heilbron/protoc-gen-openapi/pkg/protomodel"
+	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/ghodss/yaml"
