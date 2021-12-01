@@ -302,9 +302,9 @@ func (g *openapiGenerator) generateFile(name string,
 	c := openapi3.NewComponents()
 	c.Schemas = allSchemas
 	// add the openapi object required by the spec.
-	o := openapi3.Swagger{
+	o := openapi3.T{
 		OpenAPI: "3.0.1",
-		Info: openapi3.Info{
+		Info: &openapi3.Info{
 			Title:   description,
 			Version: version,
 		},
