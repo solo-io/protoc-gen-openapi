@@ -38,7 +38,7 @@ import (
 // The imperfect solution, is to just genrate an empty object for these types
 var specialSoloTypes = map[string]openapi3.Schema{
 	"core.solo.io.Status": {
-		Type:       "object",
+		Type:       openapi3.TypeObject,
 		Properties: make(map[string]*openapi3.SchemaRef),
 		ExtensionProps: openapi3.ExtensionProps{
 			Extensions: map[string]interface{}{
@@ -47,10 +47,10 @@ var specialSoloTypes = map[string]openapi3.Schema{
 		},
 	},
 	"core.solo.io.Metadata": {
-		Type: "object",
+		Type: openapi3.TypeObject,
 	},
 	"ratelimit.api.solo.io.Descriptor": {
-		Type:       "object",
+		Type:       openapi3.TypeObject,
 		Properties: make(map[string]*openapi3.SchemaRef),
 		ExtensionProps: openapi3.ExtensionProps{
 			Extensions: map[string]interface{}{
@@ -58,15 +58,9 @@ var specialSoloTypes = map[string]openapi3.Schema{
 			},
 		},
 	},
-	"google.protobuf.ListValue": {
-		Properties: map[string]*openapi3.SchemaRef{
-			"values": {
-				Value: openapi3.NewArraySchema().WithItems(openapi3.NewObjectSchema()),
-			},
-		},
-	},
+	"google.protobuf.ListValue": *openapi3.NewArraySchema().WithItems(openapi3.NewObjectSchema()),
 	"google.protobuf.Struct": {
-		Type:       "object",
+		Type:       openapi3.TypeObject,
 		Properties: make(map[string]*openapi3.SchemaRef),
 		ExtensionProps: openapi3.ExtensionProps{
 			Extensions: map[string]interface{}{
@@ -75,7 +69,7 @@ var specialSoloTypes = map[string]openapi3.Schema{
 		},
 	},
 	"google.protobuf.Any": {
-		Type:       "object",
+		Type:       openapi3.TypeObject,
 		Properties: make(map[string]*openapi3.SchemaRef),
 		ExtensionProps: openapi3.ExtensionProps{
 			Extensions: map[string]interface{}{
@@ -382,17 +376,17 @@ func (g *openapiGenerator) generateEnum(enum *protomodel.EnumDescriptor, allSche
 
 func (g *openapiGenerator) generateEnumSchema(enum *protomodel.EnumDescriptor) *openapi3.Schema {
 	/**
-	The out of the box solution created an enum like:
-		enum:
-		- - option_a
-		  - option_b
-		  - option_c
+	  The out of the box solution created an enum like:
+	  	enum:
+	  	- - option_a
+	  	  - option_b
+	  	  - option_c
 
-	Instead, what we want is:
-		enum:
-		- option_a
-		- option_b
-		- option_c
+	  Instead, what we want is:
+	  	enum:
+	  	- option_a
+	  	- option_b
+	  	- option_c
 	*/
 	o := openapi3.NewStringSchema()
 	o.Description = g.generateDescription(enum)
