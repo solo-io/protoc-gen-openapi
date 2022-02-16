@@ -1,5 +1,0 @@
-changelog:
-  - type: NON_USER_FACING
-    description: adds `object` type  for `google.protobuf.ListValue`.
-    issueLink: https://github.com/solo-io/gloo/issues/5936
-    resolvesIssue: false
