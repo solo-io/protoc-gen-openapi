@@ -78,7 +78,6 @@ var specialSoloTypes = map[string]openapi3.Schema{
 		},
 	},
 	"google.protobuf.Value": {
-		Type:       openapi3.TypeObject,
 		Properties: make(map[string]*openapi3.SchemaRef),
 		ExtensionProps: openapi3.ExtensionProps{
 			Extensions: map[string]interface{}{
