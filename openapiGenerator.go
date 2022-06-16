@@ -35,28 +35,10 @@ import (
 // Some special types with predefined schemas.
 // This is to catch cases where solo apis contain recursive definitions
 // Normally these would result in stack-overflow errors when generating the open api schema
-// The imperfect solution, is to just genrate an empty object for these types
+// The imperfect solution, is to just generate an empty object for these types
 var specialSoloTypes = map[string]openapi3.Schema{
-	"core.solo.io.Status": {
-		Type:       openapi3.TypeObject,
-		Properties: make(map[string]*openapi3.SchemaRef),
-		ExtensionProps: openapi3.ExtensionProps{
-			Extensions: map[string]interface{}{
-				"x-kubernetes-preserve-unknown-fields": true,
-			},
-		},
-	},
 	"core.solo.io.Metadata": {
 		Type: openapi3.TypeObject,
-	},
-	"ratelimit.api.solo.io.Descriptor": {
-		Type:       openapi3.TypeObject,
-		Properties: make(map[string]*openapi3.SchemaRef),
-		ExtensionProps: openapi3.ExtensionProps{
-			Extensions: map[string]interface{}{
-				"x-kubernetes-preserve-unknown-fields": true,
-			},
-		},
 	},
 	"google.protobuf.ListValue": *openapi3.NewArraySchema().WithItems(openapi3.NewObjectSchema()),
 	"google.protobuf.Struct": {
@@ -116,29 +98,61 @@ type openapiGenerator struct {
 	// @solo.io customization to support enum validation schemas with int or string values
 	// we need to support this since some controllers marshal enums as integers and others as strings
 	enumAsIntOrString bool
+
+	// @solo.io customizations to define schemas for certain messages
+	customSchemasByMessageName map[string]openapi3.Schema
 }
 
 type DescriptionConfiguration struct {
 	// Whether or not to include a description in the generated open api schema
 	IncludeDescriptionInSchema bool
-
-	// The maximum number of characters to include in a description
-	// If IncludeDescriptionsInSchema is set to false, this will be ignored
-	// A 0 value will be interpreted as "include all characters"
-	// Default: 0
-	MaxDescriptionCharacters int
 }
 
-func newOpenAPIGenerator(model *protomodel.Model, perFile bool, singleFile bool, yaml bool, useRef bool, descriptionConfiguration *DescriptionConfiguration, enumAsIntOrString bool) *openapiGenerator {
+func newOpenAPIGenerator(
+	model *protomodel.Model,
+	perFile bool,
+	singleFile bool,
+	yaml bool,
+	useRef bool,
+	descriptionConfiguration *DescriptionConfiguration,
+	enumAsIntOrString bool,
+	messagesWithEmptySchema []string,
+) *openapiGenerator {
 	return &openapiGenerator{
-		model:                    model,
-		perFile:                  perFile,
-		singleFile:               singleFile,
-		yaml:                     yaml,
-		useRef:                   useRef,
-		descriptionConfiguration: descriptionConfiguration,
-		enumAsIntOrString:        enumAsIntOrString,
+		model:                      model,
+		perFile:                    perFile,
+		singleFile:                 singleFile,
+		yaml:                       yaml,
+		useRef:                     useRef,
+		descriptionConfiguration:   descriptionConfiguration,
+		enumAsIntOrString:          enumAsIntOrString,
+		customSchemasByMessageName: buildCustomSchemasByMessageName(messagesWithEmptySchema),
 	}
+}
+
+func buildCustomSchemasByMessageName(messagesWithEmptySchema []string) map[string]openapi3.Schema {
+	schemasByMessageName := make(map[string]openapi3.Schema)
+
+	// Initialize the hard-coded values
+	for name, schema := range specialSoloTypes {
+		schemasByMessageName[name] = schema
+	}
+
+	// Add the messages that were injected at runtime
+	for _, messageName := range messagesWithEmptySchema {
+		emptyMessage := openapi3.Schema{
+			Type:       openapi3.TypeObject,
+			Properties: make(map[string]*openapi3.SchemaRef),
+			ExtensionProps: openapi3.ExtensionProps{
+				Extensions: map[string]interface{}{
+					"x-kubernetes-preserve-unknown-fields": true,
+				},
+			},
+		}
+		schemasByMessageName[messageName] = emptyMessage
+	}
+
+	return schemasByMessageName
 }
 
 func (g *openapiGenerator) generateOutput(filesToGen map[*protomodel.FileDescriptor]bool) (*plugin.CodeGeneratorResponse, error) {
@@ -438,13 +452,7 @@ func (g *openapiGenerator) generateDescription(desc protomodel.CoreDesc) string 
 		return ""
 	}
 
-	fullDescription := strings.Join(strings.Fields(t), " ")
-	maxCharacters := g.descriptionConfiguration.MaxDescriptionCharacters
-	if maxCharacters > 0 && len(fullDescription) > maxCharacters {
-		// return the first [maxCharacters] characters, including an ellipsis to mark that it has been truncated
-		return fmt.Sprintf("%s...", fullDescription[0:maxCharacters])
-	}
-	return fullDescription
+	return strings.Join(strings.Fields(t), " ")
 }
 
 func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi3.Schema {
@@ -474,7 +482,7 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 
 	case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
 		msg := field.FieldType.(*protomodel.MessageDescriptor)
-		if soloSchema, ok := specialSoloTypes[g.absoluteName(msg)]; ok {
+		if soloSchema, ok := g.customSchemasByMessageName[g.absoluteName(msg)]; ok {
 			// Allow for defining special Solo types
 			schema = g.generateSoloMessageSchema(msg, &soloSchema)
 		} else if msg.GetOptions().GetMapEntry() {
