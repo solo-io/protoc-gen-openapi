@@ -105,7 +105,7 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 				return nil, fmt.Errorf("unknown value '%s' for enum_as_int_or_string", v)
 			}
 		} else if k == "empty_schema" {
-			messagesWithEmptySchema = strings.Split(v, ",")
+			messagesWithEmptySchema = strings.Split(v, "+")
 		} else {
 			return nil, fmt.Errorf("unknown argument '%s' specified", k)
 		}
