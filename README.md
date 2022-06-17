@@ -67,3 +67,9 @@ Other supported options are:
     *   when set to `true`, the output uses the `$ref` field in OpenAPI spec to reference other schemas.
 *   `yaml`
     *   when set to `true`, the output is in yaml file.
+*   `include_description`
+    *   when set to `true`, the openapi schema will include descriptions, generated from the proto message comment.
+*   `enum_as_int_or_string`
+    *   when set to `true`, the openapi schema will include `x-kubernetes-int-or-string` on enums.
+*   `additional_empty_schemas`
+    *   a `+` separated list of message names (`core.solo.io.Status`), whose generated schema should be an empty object that accepts all values.

@@ -130,6 +130,11 @@ func newOpenAPIGenerator(
 	}
 }
 
+// buildCustomSchemasByMessageName name returns a mapping of message name to a pre-defined openapi schema
+// It includes:
+//	1. `specialSoloTypes`, a set of pre-defined schemas
+//  2. `messagesWithEmptySchema`, a list of messages that are injected at runtime that should contain
+//  and empty schema which accepts and preserves all fields
 func buildCustomSchemasByMessageName(messagesWithEmptySchema []string) map[string]openapi3.Schema {
 	schemasByMessageName := make(map[string]openapi3.Schema)
 
