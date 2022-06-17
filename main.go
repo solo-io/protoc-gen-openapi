@@ -16,7 +16,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/solo-io/protoc-gen-openapi/pkg/protocgen"
@@ -49,9 +48,9 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 	singleFile := false
 	yaml := false
 	useRef := false
-	maxCharactersInDescription := 0
 	includeDescription := true
 	enumAsIntOrString := false
+	var messagesWithEmptySchema []string
 
 	p := extractParams(request.GetParameter())
 	for k, v := range p {
@@ -87,12 +86,6 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 			default:
 				return nil, fmt.Errorf("unknown value '%s' for use_ref", v)
 			}
-		} else if k == "max_description_characters" {
-			var err error
-			maxCharactersInDescription, err = strconv.Atoi(v)
-			if err != nil {
-				return nil, fmt.Errorf("unknown value '%s' for max_description_characters", v)
-			}
 		} else if k == "include_description" {
 			switch strings.ToLower(v) {
 			case "true":
@@ -111,6 +104,8 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 			default:
 				return nil, fmt.Errorf("unknown value '%s' for enum_as_int_or_string", v)
 			}
+		} else if k == "additional_empty_schema" {
+			messagesWithEmptySchema = strings.Split(v, "+")
 		} else {
 			return nil, fmt.Errorf("unknown argument '%s' specified", k)
 		}
@@ -128,11 +123,18 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 	}
 
 	descriptionConfiguration := &DescriptionConfiguration{
-		MaxDescriptionCharacters:   maxCharactersInDescription,
 		IncludeDescriptionInSchema: includeDescription,
 	}
 
-	g := newOpenAPIGenerator(m, perFile, singleFile, yaml, useRef, descriptionConfiguration, enumAsIntOrString)
+	g := newOpenAPIGenerator(
+		m,
+		perFile,
+		singleFile,
+		yaml,
+		useRef,
+		descriptionConfiguration,
+		enumAsIntOrString,
+		messagesWithEmptySchema)
 	return g.generateOutput(filesToGen)
 }
 
