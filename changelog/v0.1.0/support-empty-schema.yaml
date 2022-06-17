@@ -1,5 +1,5 @@
 changelog:
-  - type: FIX
+  - type: BREAKING_CHANGE
     description: Support injecting a set of message names to generate empty validation schema
     issueLink: https://github.com/solo-io/gloo/issues/4789
     resolvesIssue: false
