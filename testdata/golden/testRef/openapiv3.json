@@ -41,6 +41,11 @@
                 "format": "int32",
                 "type": "integer"
               },
+              "field10": {
+                "format": "int64",
+                "type": "integer",
+                "x-kubernetes-int-or-string": true
+              },
               "field3": {
                 "type": "number"
               },
@@ -87,6 +92,11 @@
             "description": "field1 is a field",
             "format": "int32",
             "type": "integer"
+          },
+          "field10": {
+            "format": "int64",
+            "type": "integer",
+            "x-kubernetes-int-or-string": true
           },
           "field3": {
             "type": "number"
@@ -176,6 +186,16 @@
             "format": "int32",
             "type": "integer"
           },
+          "field17": {
+            "format": "int64",
+            "type": "integer",
+            "x-kubernetes-int-or-string": true
+          },
+          "field18": {
+            "format": "int64",
+            "type": "integer",
+            "x-kubernetes-int-or-string": true
+          },
           "field3": {
             "type": "number"
           },
@@ -197,11 +217,6 @@
           "field8": {
             "format": "int32",
             "type": "integer"
-          },
-          "field9": {
-            "format": "int64",
-            "type": "integer",
-            "x-kubernetes-int-or-string": true
           },
           "mapField": {
             "additionalProperties": {

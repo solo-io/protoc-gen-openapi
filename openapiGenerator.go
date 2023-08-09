@@ -71,6 +71,7 @@ var specialSoloTypes = map[string]openapi3.Schema{
 	"google.protobuf.StringValue": *openapi3.NewStringSchema().WithNullable(),
 	"google.protobuf.DoubleValue": *openapi3.NewFloat64Schema().WithNullable(),
 	"google.protobuf.Int32Value":  *openapi3.NewIntegerSchema().WithNullable().WithMin(math.MinInt32).WithMax(math.MaxInt32),
+	"google.protobuf.Int64Value":  *openapi3.NewIntegerSchema().WithNullable().WithMin(math.MinInt64).WithMax(math.MaxInt64),
 	"google.protobuf.UInt32Value": *openapi3.NewIntegerSchema().WithNullable().WithMin(0).WithMax(math.MaxUint32),
 	"google.protobuf.UInt64Value": *openapi3.NewIntegerSchema().WithNullable().WithMin(0).WithMax(math.MaxUint64),
 	"google.protobuf.FloatValue":  *openapi3.NewFloat64Schema().WithNullable(),
