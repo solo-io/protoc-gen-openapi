@@ -1,9 +1,5 @@
 {
   "openapi": "3.0.1",
-  "info": {
-    "title": "My Overview",
-    "version": "testpkg"
-  },
   "components": {
     "schemas": {
       "testpkg.Days": {
@@ -67,6 +63,11 @@
                 "format": "int32",
                 "type": "integer"
               },
+              "field9": {
+                "format": "int64",
+                "type": "integer",
+                "x-kubernetes-int-or-string": true
+              },
               "str": {
                 "description": "an array of strings",
                 "items": {
@@ -109,6 +110,11 @@
             "format": "int32",
             "type": "integer"
           },
+          "field9": {
+            "format": "int64",
+            "type": "integer",
+            "x-kubernetes-int-or-string": true
+          },
           "str": {
             "description": "an array of strings",
             "items": {
@@ -131,5 +137,10 @@
         "type": "object"
       }
     }
-  }
+  },
+  "info": {
+    "title": "My Overview",
+    "version": "testpkg"
+  },
+  "paths": null
 }

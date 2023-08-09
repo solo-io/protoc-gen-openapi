@@ -18,6 +18,7 @@ message Test3 {
     sfixed32 field6 = 6;
     sint32 field7 = 7;
     uint32 field8 = 8;
+    uint64 field9 = 9;
 
     enum Nested {
         ONE = 0;
@@ -26,8 +27,8 @@ message Test3 {
     }
 
     oneof OneofField {
-        string oneoffield1 = 9;
-        string oneoffield2 = 10;
+        string oneoffield1 = 10;
+        string oneoffield2 = 11;
     }
 
     message Test3Nested {
@@ -38,18 +39,18 @@ message Test3 {
     // first line of comment.
     //
     // second line of comment.
-    map<string, Test3_Value> mapField = 11;
+    map<string, Test3_Value> mapField = 12;
 
-    reserved 12;
+    reserved 13;
 
-    string deprecate = 13 [deprecated=true];
+    string deprecate = 14 [deprecated=true];
 
-    Test3Nested test3Nested = 14;
+    Test3Nested test3Nested = 15;
 
-    AEnum aEnum = 15;
+    AEnum aEnum = 16;
 
     // messageoneof comment
-    MessageOneOf messageOneOfField = 16;
+    MessageOneOf messageOneOfField = 17;
 }
 
 message Test3_Value {

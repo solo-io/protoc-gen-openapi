@@ -1,0 +1,3 @@
+changelog:
+  - type: NON_USER_FACING
+    description: Support custom solo type `UInt64Value`

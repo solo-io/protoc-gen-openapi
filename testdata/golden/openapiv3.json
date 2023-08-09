@@ -1,8 +1,5 @@
 {
   "openapi": "3.0.1",
-  "info": {
-    "title": "OpenAPI Spec for Solo APIs."
-  },
   "components": {
     "schemas": {
       "testpkg.Days": {
@@ -66,6 +63,11 @@
                 "format": "int32",
                 "type": "integer"
               },
+              "field9": {
+                "format": "int64",
+                "type": "integer",
+                "x-kubernetes-int-or-string": true
+              },
               "str": {
                 "description": "an array of strings",
                 "items": {
@@ -107,6 +109,11 @@
           "field8": {
             "format": "int32",
             "type": "integer"
+          },
+          "field9": {
+            "format": "int64",
+            "type": "integer",
+            "x-kubernetes-int-or-string": true
           },
           "str": {
             "description": "an array of strings",
@@ -191,6 +198,11 @@
             "format": "int32",
             "type": "integer"
           },
+          "field9": {
+            "format": "int64",
+            "type": "integer",
+            "x-kubernetes-int-or-string": true
+          },
           "mapField": {
             "additionalProperties": {
               "properties": {
@@ -261,5 +273,10 @@
         "type": "object"
       }
     }
-  }
+  },
+  "info": {
+    "title": "OpenAPI Spec for Solo APIs.",
+    "version": ""
+  },
+  "paths": null
 }
