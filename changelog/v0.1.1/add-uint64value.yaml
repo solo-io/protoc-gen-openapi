@@ -1,3 +1,5 @@
 changelog:
   - type: FIX
     description: Support custom solo type `UInt64Value` and `Int64Value`.
+    issueLink: https://github.com/solo-io/protoc-gen-openapi/issues/10
+    resolvesIssue: true
