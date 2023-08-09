@@ -50,6 +50,9 @@ message Test3 {
 
     // messageoneof comment
     MessageOneOf messageOneOfField = 16;
+
+    int64 field17 = 17;
+    uint64 field18 = 18;
 }
 
 message Test3_Value {

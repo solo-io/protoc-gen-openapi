@@ -15,4 +15,6 @@ message Test2 {
     sfixed32 field6 = 6;
     sint32 field7 = 7;
     uint32 field8 = 8;
+    int64 field9 = 9;
+    uint64 field10 = 10;
 }

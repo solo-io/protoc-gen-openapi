@@ -71,7 +71,9 @@ var specialSoloTypes = map[string]openapi3.Schema{
 	"google.protobuf.StringValue": *openapi3.NewStringSchema().WithNullable(),
 	"google.protobuf.DoubleValue": *openapi3.NewFloat64Schema().WithNullable(),
 	"google.protobuf.Int32Value":  *openapi3.NewIntegerSchema().WithNullable().WithMin(math.MinInt32).WithMax(math.MaxInt32),
+	"google.protobuf.Int64Value":  *openapi3.NewIntegerSchema().WithNullable().WithMin(math.MinInt64).WithMax(math.MaxInt64),
 	"google.protobuf.UInt32Value": *openapi3.NewIntegerSchema().WithNullable().WithMin(0).WithMax(math.MaxUint32),
+	"google.protobuf.UInt64Value": *openapi3.NewIntegerSchema().WithNullable().WithMin(0).WithMax(math.MaxUint64),
 	"google.protobuf.FloatValue":  *openapi3.NewFloat64Schema().WithNullable(),
 	"google.protobuf.Duration":    *openapi3.NewStringSchema(),
 	"google.protobuf.Empty":       *openapi3.NewObjectSchema().WithMaxProperties(0),
@@ -132,9 +134,9 @@ func newOpenAPIGenerator(
 
 // buildCustomSchemasByMessageName name returns a mapping of message name to a pre-defined openapi schema
 // It includes:
-//	1. `specialSoloTypes`, a set of pre-defined schemas
+//  1. `specialSoloTypes`, a set of pre-defined schemas
 //  2. `messagesWithEmptySchema`, a list of messages that are injected at runtime that should contain
-//  and empty schema which accepts and preserves all fields
+//     and empty schema which accepts and preserves all fields
 func buildCustomSchemasByMessageName(messagesWithEmptySchema []string) map[string]openapi3.Schema {
 	schemasByMessageName := make(map[string]openapi3.Schema)
 

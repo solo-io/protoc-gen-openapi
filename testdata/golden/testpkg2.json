@@ -1,9 +1,5 @@
 {
   "openapi": "3.0.1",
-  "info": {
-    "title": "OpenAPI Spec for Istio APIs.",
-    "version": "testpkg2"
-  },
   "components": {
     "schemas": {
       "testpkg2.AEnum": {
@@ -151,5 +147,10 @@
         "type": "object"
       }
     }
-  }
+  },
+  "info": {
+    "title": "OpenAPI Spec for Solo APIs.",
+    "version": ""
+  },
+  "paths": null
 }
