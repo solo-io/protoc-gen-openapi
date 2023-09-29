@@ -76,3 +76,7 @@ func newMessageDescriptor(desc *descriptor.DescriptorProto, parent *MessageDescr
 func (f *FieldDescriptor) IsRepeated() bool {
 	return f.Label != nil && *f.Label == descriptor.FieldDescriptorProto_LABEL_REPEATED
 }
+
+func (f *FieldDescriptor) IsOptional() bool {
+	return f.GetProto3Optional()
+}
