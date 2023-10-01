@@ -96,22 +96,7 @@
             "type": "object"
           },
           "messageOneOfField": {
-            "description": "messageoneof comment",
-            "properties": {
-              "port": {
-                "oneOf": [
-                  {
-                    "description": "Valid port number",
-                    "format": "int32",
-                    "type": "integer"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              }
-            },
-            "type": "object"
+            "$ref": "#/components/schemas/testpkg2.MessageOneOf"
           },
           "str": {
             "description": "an array of strings",

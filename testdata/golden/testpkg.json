@@ -35,53 +35,7 @@
             "type": "string"
           },
           "test2": {
-            "properties": {
-              "field1": {
-                "description": "field1 is a field",
-                "format": "int32",
-                "type": "integer"
-              },
-              "field10": {
-                "format": "int64",
-                "type": "integer",
-                "x-kubernetes-int-or-string": true
-              },
-              "field3": {
-                "type": "number"
-              },
-              "field4": {
-                "type": "number"
-              },
-              "field5": {
-                "format": "int32",
-                "type": "integer"
-              },
-              "field6": {
-                "format": "int32",
-                "type": "integer"
-              },
-              "field7": {
-                "format": "int32",
-                "type": "integer"
-              },
-              "field8": {
-                "format": "int32",
-                "type": "integer"
-              },
-              "field9": {
-                "format": "int64",
-                "type": "integer",
-                "x-kubernetes-int-or-string": true
-              },
-              "str": {
-                "description": "an array of strings",
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              }
-            },
-            "type": "object"
+            "$ref": "#/components/schemas/testpkg.Test2"
           }
         },
         "type": "object"
