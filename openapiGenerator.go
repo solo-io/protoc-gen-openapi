@@ -392,7 +392,7 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 
 	for _, field := range message.Fields {
 		sr := g.fieldTypeRef(field)
-		o.WithProperty(g.fieldName(field), sr.Value)
+		o.WithPropertyRef(g.fieldName(field), sr)
 	}
 
 	return o
