@@ -73,3 +73,5 @@ Other supported options are:
     *   when set to `true`, the openapi schema will include `x-kubernetes-int-or-string` on enums.
 *   `additional_empty_schemas`
     *   a `+` separated list of message names (`core.solo.io.Status`), whose generated schema should be an empty object that accepts all values.
+*   `strict_proto3_optional`
+    *   when set to `true`, the openapi schema will include `required` for object properties that were not explicitly marked as `optional` in proto3 field definition.
