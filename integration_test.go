@@ -108,7 +108,7 @@ func TestOpenAPIGeneration(t *testing.T) {
 				}
 
 				if bytes.Equal(got, want) {
-					return
+					continue
 				}
 
 				cmd := exec.Command("diff", "-u", wantPath, genPath)
