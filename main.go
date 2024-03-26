@@ -50,6 +50,7 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 	useRef := false
 	includeDescription := true
 	enumAsIntOrString := false
+	protoOneof := false
 	var messagesWithEmptySchema []string
 
 	p := extractParams(request.GetParameter())
@@ -104,6 +105,15 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 			default:
 				return nil, fmt.Errorf("unknown value '%s' for enum_as_int_or_string", v)
 			}
+		} else if k == "proto_oneof" {
+			switch strings.ToLower(v) {
+			case "true":
+				protoOneof = true
+			case "false":
+				protoOneof = false
+			default:
+				return nil, fmt.Errorf("unknown value '%s' for proto_oneof", v)
+			}
 		} else if k == "additional_empty_schema" {
 			messagesWithEmptySchema = strings.Split(v, "+")
 		} else {
@@ -134,7 +144,9 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 		useRef,
 		descriptionConfiguration,
 		enumAsIntOrString,
-		messagesWithEmptySchema)
+		messagesWithEmptySchema,
+		protoOneof,
+	)
 	return g.generateOutput(filesToGen)
 }
 
