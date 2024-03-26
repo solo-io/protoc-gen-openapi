@@ -73,3 +73,5 @@ Other supported options are:
     *   when set to `true`, the openapi schema will include `x-kubernetes-int-or-string` on enums.
 *   `additional_empty_schemas`
     *   a `+` separated list of message names (`core.solo.io.Status`), whose generated schema should be an empty object that accepts all values.
+*  `proto_oneof`
+    *   when set to `true`, the openapi schema will include `oneOf` emulating the behavior of proto `oneof`.
