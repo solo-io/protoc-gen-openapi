@@ -5,7 +5,9 @@ go 1.18
 require (
 	github.com/getkin/kin-openapi v0.80.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/golang/protobuf v1.3.2
+	github.com/golang/protobuf v1.5.0
+	github.com/solo-io/cue v0.4.7
+	google.golang.org/protobuf v1.26.0
 )
 
 require (

@@ -15,6 +15,8 @@
 package protomodel
 
 import (
+	"log"
+
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
@@ -53,6 +55,11 @@ func newMessageDescriptor(desc *descriptor.DescriptorProto, parent *MessageDescr
 		nameCopy := make([]string, len(qualifiedName), len(qualifiedName)+1)
 		copy(nameCopy, qualifiedName)
 		nameCopy = append(nameCopy, f.GetName())
+
+		if *f.Name == "descriptors" {
+			log.Printf("************** %s\n")
+			panic("dbg")
+		}
 
 		fd := &FieldDescriptor{
 			FieldDescriptorProto: f,

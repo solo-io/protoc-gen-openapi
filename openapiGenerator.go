@@ -18,18 +18,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"os"
 	"path"
 	"strings"
 
-	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
-
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/ghodss/yaml"
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"github.com/solo-io/cue/encoding/protobuf/cue"
+	"google.golang.org/protobuf/proto"
+
+	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
 )
 
 // Some special types with predefined schemas.
@@ -396,8 +398,35 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	o := openapi3.NewObjectSchema()
 	o.Description = g.generateDescription(message)
 
+	for _, field := range message.DescriptorProto.Field {
+		if *field.Name != "descriptors" {
+			continue
+		}
+		if field.GetOptions() == nil {
+			log.Println("######################")
+		}
+		opts, ok := proto.GetExtension(field.GetOptions(), cue.E_Opt).(*cue.FieldOptions)
+		if ok && opts != nil {
+			log.Printf("====== generateMessageSchema() field name %s, options: %+v\n", field.GetName(), opts)
+		} else {
+			log.Printf("====== generateMessageSchema() field name %s, options is nil\n", field.GetName())
+		}
+	}
+
 	oneOfFields := make(map[int32][]string)
 	for _, field := range message.Fields {
+		// opts, ok := proto.GetExtension(field.GetOptions().(*descriptorpb.MessageOptions), cue.E_Opt).(*cue.FieldOptions)
+		// if ok && opts != nil {
+		// 	log.Printf("====== generateMessageSchema() field name %s, options: %+v\n", field.GetName(), opts)
+		// } else {
+		// 	log.Printf("====== generateMessageSchema() field name %s, options is nil\n", field.GetName())
+		// }
+		// opts, ok = proto.GetExtension(field.GetOptions(), cue.E_Val).(*cue.FieldOptions)
+		// if ok && opts != nil {
+		// 	log.Printf("====== generateMessageSchema() field name %s, val options: %+v\n", field.GetName(), opts)
+		// } else {
+		// 	log.Printf("====== generateMessageSchema() field name %s, val options is nil\n", field.GetName())
+		// }
 		sr := g.fieldTypeRef(field)
 		fieldName := g.fieldName(field)
 		o.WithProperty(fieldName, sr.Value)
@@ -578,6 +607,7 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 
 // fieldTypeRef generates the `$ref` in addition to the schema for a field.
 func (g *openapiGenerator) fieldTypeRef(field *protomodel.FieldDescriptor) *openapi3.SchemaRef {
+	log.Println("====== field name: ", field.GetName())
 	s := g.fieldType(field)
 	var ref string
 	if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
