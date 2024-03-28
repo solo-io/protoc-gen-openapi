@@ -472,16 +472,38 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	}
 
 	// Add protobuf oneof schema for this message
+	oneOfs := make(map[int32][]*openapi3.Schema)
 	if g.protoOneof {
 		for idx := range oneOfFields {
+			// oneOfSchemas is a collection (not and required schemas) that should be assigned to the schemas's oneOf field
 			oneOfSchemas := newProtoOneOfSchema(oneOfFields[idx]...)
-			for _, oneOfSchema := range oneOfSchemas {
-				o.OneOf = append(o.OneOf, oneOfSchema.NewRef())
+			oneOfs[idx] = append(oneOfs[idx], oneOfSchemas...)
+		}
+
+		switch len(oneOfs) {
+		case 0:
+			// no oneof fields
+		case 1:
+			o.OneOf = getSchemaRefs(oneOfs[0]...)
+
+		default:
+			// Wrap collected refs with OneOf schema
+			for _, schemas := range oneOfs {
+				oneOfRef := openapi3.NewOneOfSchema(schemas...)
+				o.AllOf = append(o.AllOf, oneOfRef.NewRef())
 			}
 		}
 	}
 
 	return o
+}
+
+func getSchemaRefs(schemas ...*openapi3.Schema) openapi3.SchemaRefs {
+	var refs openapi3.SchemaRefs
+	for _, schema := range schemas {
+		refs = append(refs, schema.NewRef())
+	}
+	return refs
 }
 
 func getSchemaIfRepeated(schema *openapi3.Schema, repeated bool) *openapi3.Schema {
