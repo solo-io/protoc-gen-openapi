@@ -75,3 +75,5 @@ Other supported options are:
     *   a `+` separated list of message names (`core.solo.io.Status`), whose generated schema should be an empty object that accepts all values.
 *  `proto_oneof`
     *   when set to `true`, the openapi schema will include `oneOf` emulating the behavior of proto `oneof`.
+*  `int_native`
+    *   when set to `true`, the native openapi schemas will be used for Integer types instead of Solo wrappers.

@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math"
 	"os"
 	"path"
@@ -108,6 +107,9 @@ type openapiGenerator struct {
 
 	// If set to true, OpenAPI schema will include schema to emulate behavior of protobuf oneof fields
 	protoOneof bool
+
+	// If set to true, native OpenAPI integer scehmas will be used for integer types instead of Solo wrappers
+	intNative bool
 }
 
 type DescriptionConfiguration struct {
@@ -125,6 +127,7 @@ func newOpenAPIGenerator(
 	enumAsIntOrString bool,
 	messagesWithEmptySchema []string,
 	protoOneof bool,
+	intNative bool,
 ) *openapiGenerator {
 	return &openapiGenerator{
 		model:                      model,
@@ -136,6 +139,7 @@ func newOpenAPIGenerator(
 		enumAsIntOrString:          enumAsIntOrString,
 		customSchemasByMessageName: buildCustomSchemasByMessageName(messagesWithEmptySchema),
 		protoOneof:                 protoOneof,
+		intNative:                  intNative,
 	}
 }
 
@@ -397,69 +401,30 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	}
 	o := openapi3.NewObjectSchema()
 	o.Description = g.generateDescription(message)
-	log.Println("---- desc:", o.Description)
-
-	// m := message.ProtoReflect()
-	// m.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
-	// 	log.Printf("******** found field name: %s\n", fd.Name())
-	// 	if fd.Name() != "descriptors" {
-	// 		return true
-	// 	}
-	// 	opts := fd.Options().(*descriptorpb.FieldOptions)
-	// 	if opt := proto.GetExtension(opts, cue.E_Opt).(*cue.FieldOptions); opt != nil {
-	// 		log.Printf("******** found field option: %+v\n", opt)
-	// 	} else {
-	// 		log.Printf("******** field option is nil\n")
-	// 	}
-	// 	return true
-	// })
-
-	// for _, field := range message.DescriptorProto.Field {
-	// 	if *field.Name != "descriptors" {
-	// 		continue
-	// 	}
-	// 	if field.GetOptions() == nil {
-	// 		log.Println("######################")
-	// 	}
-	// 	opts, ok := proto.GetExtension(field.GetOptions(), cue.E_Opt).(*cue.FieldOptions)
-	// 	if ok && opts != nil {
-	// 		log.Printf("====== generateMessageSchema() field name %s, options: %+v\n", field.GetName(), opts)
-	// 		panic("found option")
-	// 	} else {
-	// 		log.Printf("====== generateMessageSchema() field name %s, options is nil\n", field.GetName())
-	// 	}
-	// }
 
 	oneOfFields := make(map[int32][]string)
 	for _, field := range message.Fields {
 		fieldName := g.fieldName(field)
-		log.Println("evaluating field:", fieldName)
 
 		opts, ok := proto.GetExtension(field.GetOptions(), cue.E_Opt).(*cue.FieldOptions)
 		if ok && opts != nil {
 			fieldDesc := g.generateMultiLineDescription(field)
 			repeated := field.IsRepeated()
 
-			log.Printf("=== field type:%v, desc:%s", field.GetType(), fieldDesc)
 			switch {
 			case opts.DisableOpenapiValidation:
 				schema := specialSoloTypes["google.protobuf.Struct"]
 				schema.Description = fieldDesc
 				o.WithProperty(fieldName, getSchemaIfRepeated(&schema, repeated))
-				// panic(fieldName)
 				continue
 
 			case opts.DisableOpenapiTypeValidation:
 				schema := specialSoloTypes["google.protobuf.Value"]
 				schema.Description = fieldDesc
 				o.WithProperty(fieldName, getSchemaIfRepeated(&schema, repeated))
-				// panic(fieldName)
 				continue
 			}
-			// panic("dbg")
 		}
-
-		log.Println("==== still evaluating", fieldName)
 
 		sr := g.fieldTypeRef(field)
 		o.WithProperty(fieldName, sr.Value)
@@ -626,7 +591,6 @@ func (g *openapiGenerator) generateMultiLineDescription(desc protomodel.CoreDesc
 			if strings.HasPrefix(strings.TrimSpace(line), "$hide_from_docs") {
 				continue
 			}
-			log.Printf("cur line:%s\n", line)
 			if len(line) > 0 && line[0] == ' ' {
 				line = line[1:]
 			}
@@ -651,10 +615,18 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 		schema = openapi3.NewInt32Schema()
 
 	case descriptorpb.FieldDescriptorProto_TYPE_INT64, descriptorpb.FieldDescriptorProto_TYPE_SINT64, descriptorpb.FieldDescriptorProto_TYPE_SFIXED64:
-		schema = g.generateSoloInt64Schema()
+		if g.intNative {
+			schema = openapi3.NewInt64Schema()
+		} else {
+			schema = g.generateSoloInt64Schema()
+		}
 
 	case descriptorpb.FieldDescriptorProto_TYPE_FIXED64:
-		schema = g.generateSoloInt64Schema()
+		if g.intNative {
+			schema = openapi3.NewInt64Schema()
+		} else {
+			schema = g.generateSoloInt64Schema()
+		}
 
 	case descriptorpb.FieldDescriptorProto_TYPE_FIXED32:
 		schema = openapi3.NewInt32Schema()
@@ -712,7 +684,6 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 
 // fieldTypeRef generates the `$ref` in addition to the schema for a field.
 func (g *openapiGenerator) fieldTypeRef(field *protomodel.FieldDescriptor) *openapi3.SchemaRef {
-	log.Println("====== field name: ", field.GetName())
 	s := g.fieldType(field)
 	var ref string
 	if *field.Type == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {

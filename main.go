@@ -51,6 +51,8 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 	includeDescription := true
 	enumAsIntOrString := false
 	protoOneof := false
+	intNative := false
+
 	var messagesWithEmptySchema []string
 
 	p := extractParams(request.GetParameter())
@@ -114,6 +116,15 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 			default:
 				return nil, fmt.Errorf("unknown value '%s' for proto_oneof", v)
 			}
+		} else if k == "int_native" {
+			switch strings.ToLower(v) {
+			case "true":
+				intNative = true
+			case "false":
+				intNative = false
+			default:
+				return nil, fmt.Errorf("unknown value '%s' for int_native", v)
+			}
 		} else if k == "additional_empty_schema" {
 			messagesWithEmptySchema = strings.Split(v, "+")
 		} else {
@@ -146,6 +157,7 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 		enumAsIntOrString,
 		messagesWithEmptySchema,
 		protoOneof,
+		intNative,
 	)
 	return g.generateOutput(filesToGen)
 }
