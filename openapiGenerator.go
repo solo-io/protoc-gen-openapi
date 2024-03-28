@@ -437,7 +437,7 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 
 		opts, ok := proto.GetExtension(field.GetOptions(), cue.E_Opt).(*cue.FieldOptions)
 		if ok && opts != nil {
-			fieldDesc := g.generateDescription(field)
+			fieldDesc := g.generateMultiLineDescription(field)
 			repeated := field.IsRepeated()
 
 			log.Printf("=== field type:%v, desc:%s", field.GetType(), fieldDesc)
@@ -583,6 +583,11 @@ func (g *openapiGenerator) absoluteName(desc protomodel.CoreDesc) string {
 // converts the first section of the leading comment or the description of the proto
 // to a single line of description.
 func (g *openapiGenerator) generateDescription(desc protomodel.CoreDesc) string {
+	const newDesc = true
+	if newDesc {
+		return g.generateMultiLineDescription(desc)
+	}
+
 	if !g.descriptionConfiguration.IncludeDescriptionInSchema {
 		return ""
 	}
@@ -595,6 +600,44 @@ func (g *openapiGenerator) generateDescription(desc protomodel.CoreDesc) string 
 	}
 
 	return strings.Join(strings.Fields(t), " ")
+}
+
+func (g *openapiGenerator) generateMultiLineDescription(desc protomodel.CoreDesc) string {
+	if !g.descriptionConfiguration.IncludeDescriptionInSchema {
+		return ""
+	}
+
+	c := strings.TrimSpace(desc.Location().GetLeadingComments())
+	blocks := strings.Split(c, "\n\n")
+	var sb strings.Builder
+	for i, block := range blocks {
+		if strings.HasPrefix(strings.TrimSpace(block), "$hide_from_docs") {
+			continue
+		}
+		if i > 0 {
+			sb.WriteString("\n\n")
+		}
+		var blockSb strings.Builder
+		lines := strings.Split(block, "\n")
+		for i, line := range lines {
+			if i > 0 {
+				blockSb.WriteString("\n")
+			}
+			if strings.HasPrefix(strings.TrimSpace(line), "$hide_from_docs") {
+				continue
+			}
+			log.Printf("cur line:%s\n", line)
+			if len(line) > 0 && line[0] == ' ' {
+				line = line[1:]
+			}
+			blockSb.WriteString(strings.TrimRight(line, " "))
+		}
+
+		block = blockSb.String()
+		sb.WriteString(block)
+	}
+
+	return sb.String()
 }
 
 func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi3.Schema {
