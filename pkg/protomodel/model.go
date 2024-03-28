@@ -17,8 +17,8 @@ package protomodel
 import (
 	"strings"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 // model represents a resolved in-memory version of all the input protos
@@ -28,13 +28,13 @@ type Model struct {
 	Packages       []*PackageDescriptor
 }
 
-func NewModel(request *plugin.CodeGeneratorRequest, perFile bool) *Model {
+func NewModel(request *pluginpb.CodeGeneratorRequest, perFile bool) *Model {
 	m := &Model{
 		AllFilesByName: make(map[string]*FileDescriptor, len(request.ProtoFile)),
 	}
 
 	// organize files by package
-	filesByPackage := map[string][]*descriptor.FileDescriptorProto{}
+	filesByPackage := map[string][]*descriptorpb.FileDescriptorProto{}
 	for _, pf := range request.ProtoFile {
 		pkg := packageName(pf)
 		slice := filesByPackage[pkg]
@@ -66,7 +66,7 @@ func NewModel(request *plugin.CodeGeneratorRequest, perFile bool) *Model {
 	return m
 }
 
-func packageName(f *descriptor.FileDescriptorProto) string {
+func packageName(f *descriptorpb.FileDescriptorProto) string {
 	// Does the file have a package clause?
 	if pkg := f.GetPackage(); pkg != "" {
 		return pkg

@@ -15,14 +15,12 @@
 package protomodel
 
 import (
-	"log"
-
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type MessageDescriptor struct {
 	baseDesc
-	*descriptor.DescriptorProto
+	*descriptorpb.DescriptorProto
 	Parent   *MessageDescriptor   // The containing message, if any
 	Messages []*MessageDescriptor // Inner messages, if any
 	Enums    []*EnumDescriptor    // Inner enums, if any
@@ -31,11 +29,11 @@ type MessageDescriptor struct {
 
 type FieldDescriptor struct {
 	baseDesc
-	*descriptor.FieldDescriptorProto
+	*descriptorpb.FieldDescriptorProto
 	FieldType CoreDesc // Type of data held by this field
 }
 
-func newMessageDescriptor(desc *descriptor.DescriptorProto, parent *MessageDescriptor, file *FileDescriptor, path pathVector) *MessageDescriptor {
+func newMessageDescriptor(desc *descriptorpb.DescriptorProto, parent *MessageDescriptor, file *FileDescriptor, path pathVector) *MessageDescriptor {
 	var qualifiedName []string
 	if parent == nil {
 		qualifiedName = []string{desc.GetName()}
@@ -55,11 +53,6 @@ func newMessageDescriptor(desc *descriptor.DescriptorProto, parent *MessageDescr
 		nameCopy := make([]string, len(qualifiedName), len(qualifiedName)+1)
 		copy(nameCopy, qualifiedName)
 		nameCopy = append(nameCopy, f.GetName())
-
-		if *f.Name == "descriptors" {
-			log.Printf("************** %s\n")
-			panic("dbg")
-		}
 
 		fd := &FieldDescriptor{
 			FieldDescriptorProto: f,
@@ -81,5 +74,5 @@ func newMessageDescriptor(desc *descriptor.DescriptorProto, parent *MessageDescr
 }
 
 func (f *FieldDescriptor) IsRepeated() bool {
-	return f.Label != nil && *f.Label == descriptor.FieldDescriptorProto_LABEL_REPEATED
+	return f.Label != nil && *f.Label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED
 }

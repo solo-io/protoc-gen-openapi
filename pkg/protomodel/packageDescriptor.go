@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // PackageDescriptor describes a package, which is a composition of proto files.
@@ -28,7 +28,7 @@ type PackageDescriptor struct {
 	Name  string
 }
 
-func newPackageDescriptor(name string, desc []*descriptor.FileDescriptorProto, perFile bool) *PackageDescriptor {
+func newPackageDescriptor(name string, desc []*descriptorpb.FileDescriptorProto, perFile bool) *PackageDescriptor {
 	p := &PackageDescriptor{
 		Name: name,
 	}

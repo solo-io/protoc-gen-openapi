@@ -26,10 +26,10 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/ghodss/yaml"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/solo-io/cue/encoding/protobuf/cue"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/pluginpb"
 
 	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
 )
@@ -169,8 +169,8 @@ func buildCustomSchemasByMessageName(messagesWithEmptySchema []string) map[strin
 	return schemasByMessageName
 }
 
-func (g *openapiGenerator) generateOutput(filesToGen map[*protomodel.FileDescriptor]bool) (*plugin.CodeGeneratorResponse, error) {
-	response := plugin.CodeGeneratorResponse{}
+func (g *openapiGenerator) generateOutput(filesToGen map[*protomodel.FileDescriptor]bool) (*pluginpb.CodeGeneratorResponse, error) {
+	response := pluginpb.CodeGeneratorResponse{}
 
 	if g.singleFile {
 		g.generateSingleFileOutput(filesToGen, &response)
@@ -218,7 +218,7 @@ func (g *openapiGenerator) getFileContents(file *protomodel.FileDescriptor,
 }
 
 func (g *openapiGenerator) generatePerFileOutput(filesToGen map[*protomodel.FileDescriptor]bool, pkg *protomodel.PackageDescriptor,
-	response *plugin.CodeGeneratorResponse,
+	response *pluginpb.CodeGeneratorResponse,
 ) {
 	for _, file := range pkg.Files {
 		if _, ok := filesToGen[file]; ok {
@@ -238,7 +238,7 @@ func (g *openapiGenerator) generatePerFileOutput(filesToGen map[*protomodel.File
 	}
 }
 
-func (g *openapiGenerator) generateSingleFileOutput(filesToGen map[*protomodel.FileDescriptor]bool, response *plugin.CodeGeneratorResponse) {
+func (g *openapiGenerator) generateSingleFileOutput(filesToGen map[*protomodel.FileDescriptor]bool, response *pluginpb.CodeGeneratorResponse) {
 	messages := make(map[string]*protomodel.MessageDescriptor)
 	enums := make(map[string]*protomodel.EnumDescriptor)
 	services := make(map[string]*protomodel.ServiceDescriptor)
@@ -250,11 +250,11 @@ func (g *openapiGenerator) generateSingleFileOutput(filesToGen map[*protomodel.F
 	}
 
 	rf := g.generateFile("openapiv3", &protomodel.FileDescriptor{}, messages, enums, services)
-	response.File = []*plugin.CodeGeneratorResponse_File{&rf}
+	response.File = []*pluginpb.CodeGeneratorResponse_File{&rf}
 }
 
 func (g *openapiGenerator) generatePerPackageOutput(filesToGen map[*protomodel.FileDescriptor]bool, pkg *protomodel.PackageDescriptor,
-	response *plugin.CodeGeneratorResponse,
+	response *pluginpb.CodeGeneratorResponse,
 ) {
 	// We need to produce a file for this package.
 
@@ -284,7 +284,7 @@ func (g *openapiGenerator) generateFile(name string,
 	messages map[string]*protomodel.MessageDescriptor,
 	enums map[string]*protomodel.EnumDescriptor,
 	_ map[string]*protomodel.ServiceDescriptor,
-) plugin.CodeGeneratorResponse_File {
+) pluginpb.CodeGeneratorResponse_File {
 	g.messages = messages
 
 	allSchemas := make(map[string]*openapi3.SchemaRef)
@@ -360,7 +360,7 @@ func (g *openapiGenerator) generateFile(name string,
 		g.buffer.Write(b)
 	}
 
-	return plugin.CodeGeneratorResponse_File{
+	return pluginpb.CodeGeneratorResponse_File{
 		Name:    filename,
 		Content: proto.String(g.buffer.String()),
 	}
@@ -397,38 +397,71 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	}
 	o := openapi3.NewObjectSchema()
 	o.Description = g.generateDescription(message)
+	log.Println("---- desc:", o.Description)
 
-	for _, field := range message.DescriptorProto.Field {
-		if *field.Name != "descriptors" {
-			continue
-		}
-		if field.GetOptions() == nil {
-			log.Println("######################")
-		}
-		opts, ok := proto.GetExtension(field.GetOptions(), cue.E_Opt).(*cue.FieldOptions)
-		if ok && opts != nil {
-			log.Printf("====== generateMessageSchema() field name %s, options: %+v\n", field.GetName(), opts)
-		} else {
-			log.Printf("====== generateMessageSchema() field name %s, options is nil\n", field.GetName())
-		}
-	}
+	// m := message.ProtoReflect()
+	// m.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+	// 	log.Printf("******** found field name: %s\n", fd.Name())
+	// 	if fd.Name() != "descriptors" {
+	// 		return true
+	// 	}
+	// 	opts := fd.Options().(*descriptorpb.FieldOptions)
+	// 	if opt := proto.GetExtension(opts, cue.E_Opt).(*cue.FieldOptions); opt != nil {
+	// 		log.Printf("******** found field option: %+v\n", opt)
+	// 	} else {
+	// 		log.Printf("******** field option is nil\n")
+	// 	}
+	// 	return true
+	// })
+
+	// for _, field := range message.DescriptorProto.Field {
+	// 	if *field.Name != "descriptors" {
+	// 		continue
+	// 	}
+	// 	if field.GetOptions() == nil {
+	// 		log.Println("######################")
+	// 	}
+	// 	opts, ok := proto.GetExtension(field.GetOptions(), cue.E_Opt).(*cue.FieldOptions)
+	// 	if ok && opts != nil {
+	// 		log.Printf("====== generateMessageSchema() field name %s, options: %+v\n", field.GetName(), opts)
+	// 		panic("found option")
+	// 	} else {
+	// 		log.Printf("====== generateMessageSchema() field name %s, options is nil\n", field.GetName())
+	// 	}
+	// }
 
 	oneOfFields := make(map[int32][]string)
 	for _, field := range message.Fields {
-		// opts, ok := proto.GetExtension(field.GetOptions().(*descriptorpb.MessageOptions), cue.E_Opt).(*cue.FieldOptions)
-		// if ok && opts != nil {
-		// 	log.Printf("====== generateMessageSchema() field name %s, options: %+v\n", field.GetName(), opts)
-		// } else {
-		// 	log.Printf("====== generateMessageSchema() field name %s, options is nil\n", field.GetName())
-		// }
-		// opts, ok = proto.GetExtension(field.GetOptions(), cue.E_Val).(*cue.FieldOptions)
-		// if ok && opts != nil {
-		// 	log.Printf("====== generateMessageSchema() field name %s, val options: %+v\n", field.GetName(), opts)
-		// } else {
-		// 	log.Printf("====== generateMessageSchema() field name %s, val options is nil\n", field.GetName())
-		// }
-		sr := g.fieldTypeRef(field)
 		fieldName := g.fieldName(field)
+		log.Println("evaluating field:", fieldName)
+
+		opts, ok := proto.GetExtension(field.GetOptions(), cue.E_Opt).(*cue.FieldOptions)
+		if ok && opts != nil {
+			fieldDesc := g.generateDescription(field)
+			repeated := field.IsRepeated()
+
+			log.Printf("=== field type:%v, desc:%s", field.GetType(), fieldDesc)
+			switch {
+			case opts.DisableOpenapiValidation:
+				schema := specialSoloTypes["google.protobuf.Struct"]
+				schema.Description = fieldDesc
+				o.WithProperty(fieldName, getSchemaIfRepeated(&schema, repeated))
+				// panic(fieldName)
+				continue
+
+			case opts.DisableOpenapiTypeValidation:
+				schema := specialSoloTypes["google.protobuf.Value"]
+				schema.Description = fieldDesc
+				o.WithProperty(fieldName, getSchemaIfRepeated(&schema, repeated))
+				// panic(fieldName)
+				continue
+			}
+			// panic("dbg")
+		}
+
+		log.Println("==== still evaluating", fieldName)
+
+		sr := g.fieldTypeRef(field)
 		o.WithProperty(fieldName, sr.Value)
 
 		// If the field is a oneof, we need to add the oneof property to the schema
@@ -449,6 +482,13 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	}
 
 	return o
+}
+
+func getSchemaIfRepeated(schema *openapi3.Schema, repeated bool) *openapi3.Schema {
+	if repeated {
+		schema = openapi3.NewArraySchema().WithItems(schema)
+	}
+	return schema
 }
 
 func newProtoOneOfSchema(fields ...string) []*openapi3.Schema {
@@ -539,34 +579,34 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 	var schema *openapi3.Schema
 	var isMap bool
 	switch *field.Type {
-	case descriptor.FieldDescriptorProto_TYPE_FLOAT, descriptor.FieldDescriptorProto_TYPE_DOUBLE:
+	case descriptorpb.FieldDescriptorProto_TYPE_FLOAT, descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:
 		schema = openapi3.NewFloat64Schema()
 
-	case descriptor.FieldDescriptorProto_TYPE_INT32, descriptor.FieldDescriptorProto_TYPE_SINT32, descriptor.FieldDescriptorProto_TYPE_SFIXED32:
+	case descriptorpb.FieldDescriptorProto_TYPE_INT32, descriptorpb.FieldDescriptorProto_TYPE_SINT32, descriptorpb.FieldDescriptorProto_TYPE_SFIXED32:
 		schema = openapi3.NewInt32Schema()
 
-	case descriptor.FieldDescriptorProto_TYPE_INT64, descriptor.FieldDescriptorProto_TYPE_SINT64, descriptor.FieldDescriptorProto_TYPE_SFIXED64:
+	case descriptorpb.FieldDescriptorProto_TYPE_INT64, descriptorpb.FieldDescriptorProto_TYPE_SINT64, descriptorpb.FieldDescriptorProto_TYPE_SFIXED64:
 		schema = g.generateSoloInt64Schema()
 
-	case descriptor.FieldDescriptorProto_TYPE_FIXED64:
+	case descriptorpb.FieldDescriptorProto_TYPE_FIXED64:
 		schema = g.generateSoloInt64Schema()
 
-	case descriptor.FieldDescriptorProto_TYPE_FIXED32:
+	case descriptorpb.FieldDescriptorProto_TYPE_FIXED32:
 		schema = openapi3.NewInt32Schema()
 
-	case descriptor.FieldDescriptorProto_TYPE_UINT32:
+	case descriptorpb.FieldDescriptorProto_TYPE_UINT32:
 		schema = openapi3.NewIntegerSchema().WithMin(0).WithMax(math.MaxUint32)
 
-	case descriptor.FieldDescriptorProto_TYPE_UINT64:
+	case descriptorpb.FieldDescriptorProto_TYPE_UINT64:
 		schema = openapi3.NewIntegerSchema().WithMin(0).WithMax(math.MaxUint64)
 
-	case descriptor.FieldDescriptorProto_TYPE_BOOL:
+	case descriptorpb.FieldDescriptorProto_TYPE_BOOL:
 		schema = openapi3.NewBoolSchema()
 
-	case descriptor.FieldDescriptorProto_TYPE_STRING:
+	case descriptorpb.FieldDescriptorProto_TYPE_STRING:
 		schema = openapi3.NewStringSchema()
 
-	case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
+	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
 		msg := field.FieldType.(*protomodel.MessageDescriptor)
 		if soloSchema, ok := g.customSchemasByMessageName[g.absoluteName(msg)]; ok {
 			// Allow for defining special Solo types
@@ -586,10 +626,10 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 			schema = g.generateMessageSchema(msg)
 		}
 
-	case descriptor.FieldDescriptorProto_TYPE_BYTES:
+	case descriptorpb.FieldDescriptorProto_TYPE_BYTES:
 		schema = openapi3.NewBytesSchema()
 
-	case descriptor.FieldDescriptorProto_TYPE_ENUM:
+	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
 		enum := field.FieldType.(*protomodel.EnumDescriptor)
 		schema = g.generateEnumSchema(enum)
 	}
@@ -610,7 +650,7 @@ func (g *openapiGenerator) fieldTypeRef(field *protomodel.FieldDescriptor) *open
 	log.Println("====== field name: ", field.GetName())
 	s := g.fieldType(field)
 	var ref string
-	if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+	if *field.Type == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		msg := field.FieldType.(*protomodel.MessageDescriptor)
 		// only generate `$ref` for top level messages.
 		if _, ok := g.messages[g.relativeName(field.FieldType)]; ok && msg.Parent == nil {

@@ -17,7 +17,7 @@ package protomodel
 import (
 	"strings"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // CoreDesc is an interface abstracting the abilities shared by all descriptors
@@ -32,7 +32,7 @@ type CoreDesc interface {
 
 // The common data for every descriptor in the model. This implements the coreDesc interface.
 type baseDesc struct {
-	loc    *descriptor.SourceCodeInfo_Location
+	loc    *descriptorpb.SourceCodeInfo_Location
 	hidden bool
 	cl     string
 	file   *FileDescriptor

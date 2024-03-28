@@ -15,23 +15,23 @@
 package protomodel
 
 import (
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type ServiceDescriptor struct {
 	baseDesc
-	*descriptor.ServiceDescriptorProto
+	*descriptorpb.ServiceDescriptorProto
 	Methods []*MethodDescriptor // Methods, if any
 }
 
 type MethodDescriptor struct {
 	baseDesc
-	*descriptor.MethodDescriptorProto
+	*descriptorpb.MethodDescriptorProto
 	Input  *MessageDescriptor
 	Output *MessageDescriptor
 }
 
-func newServiceDescriptor(desc *descriptor.ServiceDescriptorProto, file *FileDescriptor, path pathVector) *ServiceDescriptor {
+func newServiceDescriptor(desc *descriptorpb.ServiceDescriptorProto, file *FileDescriptor, path pathVector) *ServiceDescriptor {
 	qualifiedName := []string{desc.GetName()}
 
 	s := &ServiceDescriptor{

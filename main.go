@@ -21,7 +21,7 @@ import (
 	"github.com/solo-io/protoc-gen-openapi/pkg/protocgen"
 	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
 
-	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 // Breaks the comma-separated list of key=value pairs
@@ -43,7 +43,7 @@ func extractParams(parameter string) map[string]string {
 	return m
 }
 
-func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorResponse, error) {
+func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorResponse, error) {
 	perFile := false
 	singleFile := false
 	yaml := false
