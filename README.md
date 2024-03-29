@@ -23,14 +23,14 @@ go get github.com/golang/protobuf/proto
 To build, run the following command from this project directory:
 
 ```bash
-go build
+make build
 ```
 
 Then ensure the resulting `protoc-gen-openapi` binary is in your `PATH`. A recommended location
 is `$HOME/bin`:
 
 ```bash
-cp protoc-gen-openapi $HOME/bin
+cp _output/.bin/protoc-gen-openapi $HOME/bin
 ```
 
 Since the following is often in your `$HOME/.bashrc` file:
