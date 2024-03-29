@@ -25,12 +25,12 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/ghodss/yaml"
-	"github.com/solo-io/cue/encoding/protobuf/cue"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 
 	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
+	"github.com/solo-io/protoc-gen-openapi/protobuf/options"
 )
 
 // Some special types with predefined schemas.
@@ -409,19 +409,19 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	for _, field := range message.Fields {
 		fieldName := g.fieldName(field)
 
-		opts, ok := proto.GetExtension(field.GetOptions(), cue.E_Opt).(*cue.FieldOptions)
+		opts, ok := proto.GetExtension(field.GetOptions(), options.E_Options).(*options.FieldOptions)
 		if ok && opts != nil {
 			fieldDesc := g.generateMultiLineDescription(field)
 			repeated := field.IsRepeated()
 
 			switch {
-			case opts.DisableOpenapiValidation:
+			case opts.GetTypeObject():
 				schema := specialSoloTypes["google.protobuf.Struct"]
 				schema.Description = fieldDesc
 				o.WithProperty(fieldName, getSchemaIfRepeated(&schema, repeated))
 				continue
 
-			case opts.DisableOpenapiTypeValidation:
+			case opts.GetTypeValue():
 				schema := specialSoloTypes["google.protobuf.Value"]
 				schema.Description = fieldDesc
 				o.WithProperty(fieldName, getSchemaIfRepeated(&schema, repeated))

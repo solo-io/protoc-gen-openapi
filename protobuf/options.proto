@@ -11,17 +11,16 @@ option go_package = "github.com/solo-io/protoc-gen-openapi/protobuf/options";
 message FieldOptions {
     // Enable this option to treat this field as an unstructured object in the OpenAPI schema.
     // This can be set to disable infinite recursion of proto fields.
-    bool openapi_type_object= 1;
+    optional bool type_object = 1;
 
     // Enable this option to treat this field as any value in the OpenAPI schema.
     // This can be set to disable infinite recursion when expanding references on recursive types.
     // In addition, should be set when using `google.protobuf.Value`, which can accept any JSON value type:
     // object, array, string, number, boolean, or null.
-    bool openapi_type_value = 2;
-
+    optional bool type_value = 2;
 }
 
 extend google.protobuf.FieldOptions {
-    string val = 123456;
-    FieldOptions opt = 1069;
+    // TODO: update extension number once it has been registered with the upstream Extension registry
+    optional FieldOptions options = 123456;
 }
