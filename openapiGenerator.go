@@ -615,14 +615,8 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 	case descriptorpb.FieldDescriptorProto_TYPE_INT32, descriptorpb.FieldDescriptorProto_TYPE_SINT32, descriptorpb.FieldDescriptorProto_TYPE_SFIXED32:
 		schema = openapi3.NewInt32Schema()
 
-	case descriptorpb.FieldDescriptorProto_TYPE_INT64, descriptorpb.FieldDescriptorProto_TYPE_SINT64, descriptorpb.FieldDescriptorProto_TYPE_SFIXED64:
-		if g.intNative {
-			schema = openapi3.NewInt64Schema()
-		} else {
-			schema = g.generateSoloInt64Schema()
-		}
-
-	case descriptorpb.FieldDescriptorProto_TYPE_FIXED64:
+	case descriptorpb.FieldDescriptorProto_TYPE_INT64, descriptorpb.FieldDescriptorProto_TYPE_SINT64,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64, descriptorpb.FieldDescriptorProto_TYPE_FIXED64:
 		if g.intNative {
 			schema = openapi3.NewInt64Schema()
 		} else {
@@ -636,7 +630,13 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 		schema = openapi3.NewIntegerSchema().WithMin(0).WithMax(math.MaxUint32)
 
 	case descriptorpb.FieldDescriptorProto_TYPE_UINT64:
-		schema = openapi3.NewIntegerSchema().WithMin(0).WithMax(math.MaxUint64)
+		if g.intNative {
+			// we don't set the max here beacause it is too large to be represented without scientific notation
+			// in YAML format
+			schema = openapi3.NewIntegerSchema().WithMin(0).WithFormat("uint64")
+		} else {
+			schema = g.generateSoloInt64Schema()
+		}
 
 	case descriptorpb.FieldDescriptorProto_TYPE_BOOL:
 		schema = openapi3.NewBoolSchema()

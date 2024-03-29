@@ -28,27 +28,38 @@ const goldenDir = "testdata/golden/"
 func TestOpenAPIGeneration(t *testing.T) {
 	testcases := []struct {
 		name       string
+		id         string
 		perPackage bool
 		genOpts    string
 		wantFiles  []string
 	}{
 		{
 			name:       "Per Package Generation",
+			id:         "test1",
 			perPackage: true,
 			genOpts:    "",
 			wantFiles:  []string{"testpkg.json", "testpkg2.json"},
 		},
 		{
 			name:       "Single File Generation",
+			id:         "test2",
 			perPackage: false,
 			genOpts:    "single_file=true",
 			wantFiles:  []string{"openapiv3.json"},
 		},
 		{
 			name:       "Use $ref in the output",
+			id:         "test3",
 			perPackage: false,
 			genOpts:    "single_file=true,use_ref=true",
 			wantFiles:  []string{"testRef/openapiv3.json"},
+		},
+		{
+			name:       "Use yaml, proto_oneof, int_native, and multiline_description",
+			id:         "test4",
+			perPackage: false,
+			genOpts:    "yaml=true,single_file=true,proto_oneof=true,int_native=true,multiline_description=true",
+			wantFiles:  []string{"test4/openapiv3.yaml"},
 		},
 	}
 

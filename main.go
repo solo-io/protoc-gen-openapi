@@ -142,6 +142,10 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 		}
 	}
 
+	if !yaml && multilineDescription {
+		return nil, fmt.Errorf("multiline_description is only supported when yaml=true")
+	}
+
 	m := protomodel.NewModel(&request, perFile)
 
 	filesToGen := make(map[*protomodel.FileDescriptor]bool)
