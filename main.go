@@ -49,6 +49,7 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 	yaml := false
 	useRef := false
 	includeDescription := true
+	multilineDescription := false
 	enumAsIntOrString := false
 	protoOneof := false
 	intNative := false
@@ -98,6 +99,15 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 			default:
 				return nil, fmt.Errorf("unknown value '%s' for include_description", v)
 			}
+		} else if k == "multiline_description" {
+			switch strings.ToLower(v) {
+			case "true":
+				multilineDescription = true
+			case "false":
+				multilineDescription = false
+			default:
+				return nil, fmt.Errorf("unknown value '%s' for multiline_description", v)
+			}
 		} else if k == "enum_as_int_or_string" {
 			switch strings.ToLower(v) {
 			case "true":
@@ -145,6 +155,7 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 
 	descriptionConfiguration := &DescriptionConfiguration{
 		IncludeDescriptionInSchema: includeDescription,
+		MultilineDescription:       multilineDescription,
 	}
 
 	g := newOpenAPIGenerator(

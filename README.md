@@ -69,6 +69,8 @@ Other supported options are:
     *   when set to `true`, the output is in yaml file.
 *   `include_description`
     *   when set to `true`, the openapi schema will include descriptions, generated from the proto message comment.
+*   `multiline_description`
+    *  when set to `true`, the openapi schema will include descriptions, generated from the proto message comment, that can span multiple lines.
 *   `enum_as_int_or_string`
     *   when set to `true`, the openapi schema will include `x-kubernetes-int-or-string` on enums.
 *   `additional_empty_schemas`

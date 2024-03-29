@@ -115,6 +115,9 @@ type openapiGenerator struct {
 type DescriptionConfiguration struct {
 	// Whether or not to include a description in the generated open api schema
 	IncludeDescriptionInSchema bool
+
+	// Whether or not the description for properties should be allowed to span multiple lines
+	MultilineDescription bool
 }
 
 func newOpenAPIGenerator(
@@ -436,9 +439,9 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 		}
 	}
 
-	// Add protobuf oneof schema for this message
-	oneOfs := make(map[int32][]*openapi3.Schema)
 	if g.protoOneof {
+		// Add protobuf oneof schema for this message
+		oneOfs := make([][]*openapi3.Schema, len(oneOfFields))
 		for idx := range oneOfFields {
 			// oneOfSchemas is a collection (not and required schemas) that should be assigned to the schemas's oneOf field
 			oneOfSchemas := newProtoOneOfSchema(oneOfFields[idx]...)
@@ -450,9 +453,8 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 			// no oneof fields
 		case 1:
 			o.OneOf = getSchemaRefs(oneOfs[0]...)
-
 		default:
-			// Wrap collected refs with OneOf schema
+			// Wrap collected OneOf refs with AllOf schema
 			for _, schemas := range oneOfs {
 				oneOfRef := openapi3.NewOneOfSchema(schemas...)
 				o.AllOf = append(o.AllOf, oneOfRef.NewRef())
@@ -548,8 +550,7 @@ func (g *openapiGenerator) absoluteName(desc protomodel.CoreDesc) string {
 // converts the first section of the leading comment or the description of the proto
 // to a single line of description.
 func (g *openapiGenerator) generateDescription(desc protomodel.CoreDesc) string {
-	const newDesc = true
-	if newDesc {
+	if g.descriptionConfiguration.MultilineDescription {
 		return g.generateMultiLineDescription(desc)
 	}
 
