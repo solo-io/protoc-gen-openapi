@@ -480,6 +480,37 @@ func getSchemaIfRepeated(schema *openapi3.Schema, repeated bool) *openapi3.Schem
 	return schema
 }
 
+// newProtoOneOfSchema returns a schema that can be used to represent a collection of fields
+// that must be encoded as a oneOf in OpenAPI.
+// For e.g., if the fields x and y are a part of a proto oneof, then they can be represented as
+// follows, such that only one of x or y is required and specifying neither is also acceptable.
+//
+//	{
+//		"not": {
+//			"anyOf": [
+//				{
+//					"required": [
+//						"x"
+//					]
+//				},
+//				{
+//					"required": [
+//						"y"
+//					]
+//				}
+//			]
+//		}
+//	},
+//	{
+//		"required": [
+//			"x"
+//		]
+//	},
+//	{
+//		"required": [
+//			"y"
+//		]
+//	}
 func newProtoOneOfSchema(fields ...string) []*openapi3.Schema {
 	fieldSchemas := make([]*openapi3.Schema, len(fields))
 	for i, field := range fields {
