@@ -16,7 +16,6 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -27,7 +26,7 @@ import (
 const goldenDir = "testdata/golden/"
 
 func TestOpenAPIGeneration(t *testing.T) {
-	var testcases = []struct {
+	testcases := []struct {
 		name       string
 		perPackage bool
 		genOpts    string
@@ -55,7 +54,7 @@ func TestOpenAPIGeneration(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			tempDir, err := ioutil.TempDir("", "openapi-temp")
+			tempDir, err := os.MkdirTemp("", "openapi-temp")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -93,7 +92,7 @@ func TestOpenAPIGeneration(t *testing.T) {
 				wantPath := goldenDir + file
 				// we are looking for the same file name in the generated path
 				genPath := filepath.Join(tempDir, filepath.Base(wantPath))
-				got, err := ioutil.ReadFile(genPath)
+				got, err := os.ReadFile(genPath)
 				if err != nil {
 					if os.IsNotExist(err) {
 						t.Fatalf("expected generated file %v does not exist: %v", genPath, err)
@@ -102,13 +101,13 @@ func TestOpenAPIGeneration(t *testing.T) {
 					}
 				}
 
-				want, err := ioutil.ReadFile(wantPath)
+				want, err := os.ReadFile(wantPath)
 				if err != nil {
 					t.Errorf("error reading the golden file: %v", err)
 				}
 
 				if bytes.Equal(got, want) {
-					return
+					continue
 				}
 
 				cmd := exec.Command("diff", "-u", wantPath, genPath)
