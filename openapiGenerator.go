@@ -81,12 +81,13 @@ var specialSoloTypes = map[string]openapi3.Schema{
 }
 
 type openapiGenerator struct {
-	buffer     bytes.Buffer
-	model      *protomodel.Model
-	perFile    bool
-	singleFile bool
-	yaml       bool
-	useRef     bool
+	buffer               bytes.Buffer
+	model                *protomodel.Model
+	perFile              bool
+	singleFile           bool
+	yaml                 bool
+	useRef               bool
+	strictProto3Optional bool
 
 	// transient state as individual files are processed
 	currentPackage             *protomodel.PackageDescriptor
@@ -111,24 +112,19 @@ type DescriptionConfiguration struct {
 }
 
 func newOpenAPIGenerator(
+	options *generationOptions,
 	model *protomodel.Model,
-	perFile bool,
-	singleFile bool,
-	yaml bool,
-	useRef bool,
-	descriptionConfiguration *DescriptionConfiguration,
-	enumAsIntOrString bool,
-	messagesWithEmptySchema []string,
-) *openapiGenerator {
+	descriptionConfiguration *DescriptionConfiguration) *openapiGenerator {
 	return &openapiGenerator{
 		model:                      model,
-		perFile:                    perFile,
-		singleFile:                 singleFile,
-		yaml:                       yaml,
-		useRef:                     useRef,
+		perFile:                    options.perFile,
+		singleFile:                 options.singleFile,
+		yaml:                       options.yaml,
+		useRef:                     options.useRef,
+		strictProto3Optional:       options.strictProto3Optional,
 		descriptionConfiguration:   descriptionConfiguration,
-		enumAsIntOrString:          enumAsIntOrString,
-		customSchemasByMessageName: buildCustomSchemasByMessageName(messagesWithEmptySchema),
+		enumAsIntOrString:          options.enumAsIntOrString,
+		customSchemasByMessageName: buildCustomSchemasByMessageName(options.messagesWithEmptySchema),
 	}
 }
 
@@ -163,7 +159,8 @@ func buildCustomSchemasByMessageName(messagesWithEmptySchema []string) map[strin
 }
 
 func (g *openapiGenerator) generateOutput(filesToGen map[*protomodel.FileDescriptor]bool) (*plugin.CodeGeneratorResponse, error) {
-	response := plugin.CodeGeneratorResponse{}
+	supportedFeatures := uint64(plugin.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL)
+	response := plugin.CodeGeneratorResponse{SupportedFeatures: &supportedFeatures}
 
 	if g.singleFile {
 		g.generateSingleFileOutput(filesToGen, &response)
@@ -393,6 +390,9 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	for _, field := range message.Fields {
 		sr := g.fieldTypeRef(field)
 		o.WithProperty(g.fieldName(field), sr.Value)
+		if g.strictProto3Optional && !field.IsOptional() {
+			o.Required = append(o.Required, g.fieldName(field))
+		}
 	}
 
 	return o
