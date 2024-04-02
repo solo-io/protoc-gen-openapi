@@ -1,0 +1,40 @@
+components:
+  schemas:
+    test5.Msg:
+      description: This is a top-level message.
+      properties:
+        list:
+          items:
+            type: string
+          type: array
+          x-kubernetes-validations:
+          - message: must contain 'a string'
+            rule: self.all(x, x.contains('a string'))
+        msgNested:
+          properties:
+            a:
+              format: int32
+              type: integer
+            b:
+              type: string
+          type: object
+          x-kubernetes-validations:
+          - message: must be a postive value
+            rule: self.a > 0
+          - messageExpression: '"b got invalid value: " + self.x'
+            rule: self.b != 'default'
+        nonNested:
+          type: string
+      type: object
+      x-kubernetes-validations:
+      - message: must be a postive value
+        rule: self.msgNested.a > 0
+      - message: cannot be empty
+        rule: self.nonNested != ''
+      - messageExpression: '"b got invalid value: " + self.msgNested.x'
+        rule: self.msgNested.b != 'default'
+info:
+  title: OpenAPI Spec for Solo APIs.
+  version: ""
+openapi: 3.0.1
+paths: null

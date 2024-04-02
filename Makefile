@@ -12,12 +12,7 @@ install-deps: install-protoc
 	mkdir -p $(BINDIR)
 	GOBIN=$(BINDIR) go install github.com/golang/protobuf/protoc-gen-go
 
-build-proto:
-	mkdir -p $(ROOTDIR)/protobuf/options
-	PATH=$(BINDIR):$(PATH) protoc -I=$(ROOTDIR)/protobuf/imports/ -I=$(ROOTDIR)/protobuf --go_out=$(OUTPUTDIR) $(ROOTDIR)/protobuf/options.proto
-	cp $(OUTPUTDIR)/github.com/solo-io/protoc-gen-openapi/protobuf/options/options.pb.go $(ROOTDIR)/protobuf/options
-
-build: install-deps build-proto
+build: install-deps
 	mkdir -p $(BINDIR)
 	go build -o $(BINDIR)/protoc-gen-openapi
 
@@ -32,6 +27,7 @@ gotest:
 PROTOC_VERSION:=3.15.8
 PROTOC_URL:=https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}
 .PHONY: install-protoc
+.SILENT: install-protoc
 install-protoc:
 	mkdir -p $(BINDIR)
 	if [ $(shell ${BINDIR}/protoc --version | grep -c ${PROTOC_VERSION}) -ne 0 ]; then \
@@ -54,4 +50,4 @@ install-protoc:
 	fi
 
 clean:
-	@rm -fr $(OUTPUTDIR) $(BINDIR)/protoc-gen-openapi
+	@rm -rf $(OUTPUTDIR)

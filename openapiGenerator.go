@@ -29,8 +29,14 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 
+	"github.com/solo-io/protoc-gen-openapi/pkg/markers"
 	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
-	"github.com/solo-io/protoc-gen-openapi/protobuf/options"
+)
+
+const (
+	validationMarker = "+kubebuilder:validation:"
+
+	hideMarker = "$hide_from_docs"
 )
 
 // Some special types with predefined schemas.
@@ -405,32 +411,34 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	}
 	o := openapi3.NewObjectSchema()
 	o.Description = g.generateDescription(message)
+	msgRules := g.validationRules(message)
+	markers.ApplyToSchema(o, msgRules)
 
 	oneOfFields := make(map[int32][]string)
 	for _, field := range message.Fields {
+		repeated := field.IsRepeated()
 		fieldName := g.fieldName(field)
+		fieldDesc := g.generateDescription(field)
+		fieldRules := g.validationRules(field)
 
-		opts, ok := proto.GetExtension(field.GetOptions(), options.E_Options).(*options.FieldOptions)
-		if ok && opts != nil {
-			fieldDesc := g.generateDescription(field)
-			repeated := field.IsRepeated()
-
-			switch {
-			case opts.GetTypeObject():
-				schema := specialSoloTypes["google.protobuf.Struct"]
-				schema.Description = fieldDesc
-				o.WithProperty(fieldName, getSchemaIfRepeated(&schema, repeated))
-				continue
-
-			case opts.GetTypeValue():
-				schema := specialSoloTypes["google.protobuf.Value"]
-				schema.Description = fieldDesc
-				o.WithProperty(fieldName, getSchemaIfRepeated(&schema, repeated))
-				continue
-			}
+		schemaType := markers.ParseType(fieldRules)
+		switch schemaType {
+		case markers.TypeObject:
+			schema := specialSoloTypes["google.protobuf.Struct"]
+			schema.Description = fieldDesc
+			markers.ApplyToSchema(&schema, fieldRules)
+			o.WithProperty(fieldName, getSchemaIfRepeated(&schema, repeated))
+			continue
+		case markers.TypeValue:
+			schema := specialSoloTypes["google.protobuf.Value"]
+			schema.Description = fieldDesc
+			markers.ApplyToSchema(&schema, fieldRules)
+			o.WithProperty(fieldName, getSchemaIfRepeated(&schema, repeated))
+			continue
 		}
 
 		sr := g.fieldTypeRef(field)
+		markers.ApplyToSchema(sr.Value, fieldRules)
 		o.WithProperty(fieldName, sr.Value)
 
 		// If the field is a oneof, we need to add the oneof property to the schema
@@ -604,12 +612,22 @@ func (g *openapiGenerator) generateMultiLineDescription(desc protomodel.CoreDesc
 	if !g.descriptionConfiguration.IncludeDescriptionInSchema {
 		return ""
 	}
+	comments, _ := g.parseComments(desc)
+	return comments
+}
 
+func (g *openapiGenerator) validationRules(desc protomodel.CoreDesc) []string {
+	_, validationRules := g.parseComments(desc)
+	return validationRules
+}
+
+func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments string, validationRules []string) {
 	c := strings.TrimSpace(desc.Location().GetLeadingComments())
 	blocks := strings.Split(c, "\n\n")
+
 	var sb strings.Builder
 	for i, block := range blocks {
-		if strings.HasPrefix(strings.TrimSpace(block), "$hide_from_docs") {
+		if strings.HasPrefix(strings.TrimSpace(block), hideMarker) {
 			continue
 		}
 		if i > 0 {
@@ -621,7 +639,12 @@ func (g *openapiGenerator) generateMultiLineDescription(desc protomodel.CoreDesc
 			if i > 0 {
 				blockSb.WriteString("\n")
 			}
-			if strings.HasPrefix(strings.TrimSpace(line), "$hide_from_docs") {
+			l := strings.TrimSpace(line)
+			if strings.HasPrefix(l, hideMarker) {
+				continue
+			}
+			if strings.HasPrefix(l, validationMarker) {
+				validationRules = append(validationRules, l)
 				continue
 			}
 			if len(line) > 0 && line[0] == ' ' {
@@ -634,7 +657,8 @@ func (g *openapiGenerator) generateMultiLineDescription(desc protomodel.CoreDesc
 		sb.WriteString(block)
 	}
 
-	return sb.String()
+	comments = strings.TrimSpace(sb.String())
+	return
 }
 
 func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi3.Schema {
