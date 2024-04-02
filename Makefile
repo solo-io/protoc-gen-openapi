@@ -25,7 +25,7 @@ run:
 	protoc --plugin=./$(BINDIR)/protoc-gen-openapi --openapi_out=single_file=true,use_ref=true:$(OUTPUTDIR)/. -Itestdata testdata/testpkg/test1.proto testdata/testpkg/test2.proto testdata/testpkg/test6.proto testdata/testpkg2/test3.proto
 
 gotest:
-	go test
+	go test -v ./...
 
 clean:
 	@rm -fr $(OUTPUTDIR) $(BINDIR)/protoc-gen-openapi

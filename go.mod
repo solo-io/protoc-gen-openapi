@@ -1,6 +1,6 @@
 module github.com/solo-io/protoc-gen-openapi
 
-go 1.18
+go 1.22
 
 require (
 	github.com/getkin/kin-openapi v0.80.0
