@@ -412,7 +412,7 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 
 		opts, ok := proto.GetExtension(field.GetOptions(), options.E_Options).(*options.FieldOptions)
 		if ok && opts != nil {
-			fieldDesc := g.generateMultiLineDescription(field)
+			fieldDesc := g.generateDescription(field)
 			repeated := field.IsRepeated()
 
 			switch {
