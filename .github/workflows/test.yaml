@@ -18,4 +18,4 @@ jobs:
           go-version: '1.22.x'
 
       - name: Run tests
-        run: make gotest
+        run: make build-and-test
