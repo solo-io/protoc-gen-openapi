@@ -78,4 +78,4 @@ Other supported options are:
 *  `proto_oneof`
     *   when set to `true`, the openapi schema will include `oneOf` emulating the behavior of proto `oneof`.
 *  `int_native`
-    *   when set to `true`, the native openapi schemas will be used for Integer types instead of Solo wrappers.
+    *   when set to `true`, the native openapi schemas will be used for Integer types instead of Solo wrappers that add Kubernetes extension headers to the schema to treat int as strings

@@ -109,6 +109,7 @@ type openapiGenerator struct {
 	protoOneof bool
 
 	// If set to true, native OpenAPI integer scehmas will be used for integer types instead of Solo wrappers
+	// that add Kubernetes extension headers to the schema to treat int as strings.
 	intNative bool
 }
 
