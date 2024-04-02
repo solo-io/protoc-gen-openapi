@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 jobs:
-  integration:
+  go:
 
     runs-on: ubuntu-latest
 
