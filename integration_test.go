@@ -100,7 +100,7 @@ func TestOpenAPIGeneration(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			// defer os.RemoveAll(tempDir)
+			defer os.RemoveAll(tempDir)
 
 			if tc.perPackage {
 				for _, files := range tc.inputFiles {
