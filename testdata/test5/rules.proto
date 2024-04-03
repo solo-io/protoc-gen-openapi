@@ -10,6 +10,8 @@ package test5;
 message Msg {
   nested msg_nested = 1;
 
+  // @exclude
+  // this block comment
   string non_nested = 2;
 
   // +kubebuilder:validation:XValidation:rule="self.all(x, x.contains('a string'))";;message="must contain 'a string'"
@@ -36,6 +38,7 @@ message Msg {
     string b = 2;
   }
 
+  // @exclude this comment should not be included in the output schema
   message Recursive {
     Recursive r = 1;
   }

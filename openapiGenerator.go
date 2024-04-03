@@ -35,9 +35,9 @@ import (
 
 const (
 	validationMarker = "+kubebuilder:validation:"
-
-	hideMarker = "$hide_from_docs"
 )
+
+var descriptionExclusionMarkers = []string{"$hide_from_docs", "$hide", "@exclude"}
 
 // Some special types with predefined schemas.
 // This is to catch cases where solo apis contain recursive definitions
@@ -631,7 +631,7 @@ func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments str
 
 	var sb strings.Builder
 	for i, block := range blocks {
-		if strings.HasPrefix(strings.TrimSpace(block), hideMarker) {
+		if shouldNotRenderDesc(strings.TrimSpace(block)) {
 			continue
 		}
 		if i > 0 {
@@ -644,7 +644,7 @@ func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments str
 				blockSb.WriteString("\n")
 			}
 			l := strings.TrimSpace(line)
-			if strings.HasPrefix(l, hideMarker) {
+			if shouldNotRenderDesc(l) {
 				continue
 			}
 			if strings.HasPrefix(l, validationMarker) {
@@ -663,6 +663,16 @@ func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments str
 
 	comments = strings.TrimSpace(sb.String())
 	return
+}
+
+func shouldNotRenderDesc(desc string) bool {
+	desc = strings.TrimSpace(desc)
+	for _, marker := range descriptionExclusionMarkers {
+		if strings.HasPrefix(desc, marker) {
+			return true
+		}
+	}
+	return false
 }
 
 func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi3.Schema {
