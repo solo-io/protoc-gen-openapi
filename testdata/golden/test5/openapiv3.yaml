@@ -25,6 +25,21 @@ components:
             rule: self.b != 'default'
         nonNested:
           type: string
+        recursiveObj:
+          description: Recursive object.
+          items:
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+          type: array
+          x-kubernetes-validations:
+          - rule: self.x = 1
+        recursiveVal:
+          description: Recursive value.
+          items:
+            x-kubernetes-preserve-unknown-fields: true
+          type: array
+          x-kubernetes-validations:
+          - rule: self.x = 1
       type: object
       x-kubernetes-validations:
       - message: must be a postive value

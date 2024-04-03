@@ -422,18 +422,12 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 		fieldRules := g.validationRules(field)
 
 		schemaType := markers.ParseType(fieldRules)
-		switch schemaType {
-		case markers.TypeObject:
-			schema := specialSoloTypes["google.protobuf.Struct"]
+		if schemaType != "" {
+			tmp := getSoloSchemaForMarkerType(schemaType)
+			schema := getSchemaIfRepeated(&tmp, repeated)
 			schema.Description = fieldDesc
-			markers.ApplyToSchema(&schema, fieldRules)
-			o.WithProperty(fieldName, getSchemaIfRepeated(&schema, repeated))
-			continue
-		case markers.TypeValue:
-			schema := specialSoloTypes["google.protobuf.Value"]
-			schema.Description = fieldDesc
-			markers.ApplyToSchema(&schema, fieldRules)
-			o.WithProperty(fieldName, getSchemaIfRepeated(&schema, repeated))
+			markers.ApplyToSchema(schema, fieldRules)
+			o.WithProperty(fieldName, schema)
 			continue
 		}
 
@@ -472,6 +466,16 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	}
 
 	return o
+}
+
+func getSoloSchemaForMarkerType(t string) openapi3.Schema {
+	switch t {
+	case markers.TypeObject:
+		return specialSoloTypes["google.protobuf.Struct"]
+	case markers.TypeValue:
+		return specialSoloTypes["google.protobuf.Value"]
+	}
+	return openapi3.Schema{}
 }
 
 func getSchemaRefs(schemas ...*openapi3.Schema) openapi3.SchemaRefs {

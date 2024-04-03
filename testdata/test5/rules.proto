@@ -15,6 +15,18 @@ message Msg {
   // +kubebuilder:validation:XValidation:rule="self.all(x, x.contains('a string'))";;message="must contain 'a string'"
   repeated string list = 3;
 
+  // Recursive object.
+  //
+  // +kubebuilder:validation:Type=object
+  // +kubebuilder:validation:XValidation:rule="self.x = 1"
+  repeated Recursive recursive_obj = 4;
+
+  // Recursive value.
+  //
+  // +kubebuilder:validation:Type=value
+  // +kubebuilder:validation:XValidation:rule="self.x = 1"
+  repeated Recursive recursive_val = 5;
+
   // This is a nested message.
   //
   // +kubebuilder:validation:XValidation:rule="self.a > 0";;message="must be a postive value"
@@ -22,6 +34,10 @@ message Msg {
   message nested {
     int32 a = 1;
     string b = 2;
+  }
+
+  message Recursive {
+    Recursive r = 1;
   }
 }
 
