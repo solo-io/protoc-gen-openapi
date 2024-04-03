@@ -1,5 +1,5 @@
 changelog:
-  - type: NEW_FEATURE
+  - type: BREAKING_CHANGE
     issueLink: https://github.com/solo-io/protoc-gen-openapi/issues/20
     resolvesIssue: true
     description: |
