@@ -15,26 +15,26 @@
 package protomodel
 
 import (
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type FileDescriptor struct {
-	*descriptor.FileDescriptorProto
+	*descriptorpb.FileDescriptorProto
 	Parent       *PackageDescriptor
-	AllMessages  []*MessageDescriptor                               // All the messages defined in this file
-	AllEnums     []*EnumDescriptor                                  // All the enums defined in this file
-	Messages     []*MessageDescriptor                               // Top-level messages defined in this file
-	Enums        []*EnumDescriptor                                  // Top-level enums defined in this file
-	Services     []*ServiceDescriptor                               // All services defined in this file
-	Dependencies []*FileDescriptor                                  // Files imported by this file
-	locations    map[pathVector]*descriptor.SourceCodeInfo_Location // Provenance
-	Matter       FrontMatter                                        // Title, overview, homeLocation, front_matter
+	AllMessages  []*MessageDescriptor                                 // All the messages defined in this file
+	AllEnums     []*EnumDescriptor                                    // All the enums defined in this file
+	Messages     []*MessageDescriptor                                 // Top-level messages defined in this file
+	Enums        []*EnumDescriptor                                    // Top-level enums defined in this file
+	Services     []*ServiceDescriptor                                 // All services defined in this file
+	Dependencies []*FileDescriptor                                    // Files imported by this file
+	locations    map[pathVector]*descriptorpb.SourceCodeInfo_Location // Provenance
+	Matter       FrontMatter                                          // Title, overview, homeLocation, front_matter
 }
 
-func newFileDescriptor(desc *descriptor.FileDescriptorProto, parent *PackageDescriptor) *FileDescriptor {
+func newFileDescriptor(desc *descriptorpb.FileDescriptorProto, parent *PackageDescriptor) *FileDescriptor {
 	f := &FileDescriptor{
 		FileDescriptorProto: desc,
-		locations:           make(map[pathVector]*descriptor.SourceCodeInfo_Location, len(desc.GetSourceCodeInfo().GetLocation())),
+		locations:           make(map[pathVector]*descriptorpb.SourceCodeInfo_Location, len(desc.GetSourceCodeInfo().GetLocation())),
 		Parent:              parent,
 	}
 
@@ -77,7 +77,7 @@ func newFileDescriptor(desc *descriptor.FileDescriptorProto, parent *PackageDesc
 	return f
 }
 
-func (f *FileDescriptor) find(path pathVector) *descriptor.SourceCodeInfo_Location {
+func (f *FileDescriptor) find(path pathVector) *descriptorpb.SourceCodeInfo_Location {
 	loc := f.locations[path]
 	return loc
 }

@@ -25,3 +25,4 @@ _output/
 # Local binary produced by make build
 protoc-gen-openapi
 out/
+_output/

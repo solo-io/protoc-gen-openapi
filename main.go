@@ -21,7 +21,7 @@ import (
 	"github.com/solo-io/protoc-gen-openapi/pkg/protocgen"
 	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
 
-	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 // Breaks the comma-separated list of key=value pairs
@@ -43,13 +43,17 @@ func extractParams(parameter string) map[string]string {
 	return m
 }
 
-func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorResponse, error) {
+func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorResponse, error) {
 	perFile := false
 	singleFile := false
 	yaml := false
 	useRef := false
 	includeDescription := true
+	multilineDescription := false
 	enumAsIntOrString := false
+	protoOneof := false
+	intNative := false
+
 	var messagesWithEmptySchema []string
 
 	p := extractParams(request.GetParameter())
@@ -95,6 +99,15 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 			default:
 				return nil, fmt.Errorf("unknown value '%s' for include_description", v)
 			}
+		} else if k == "multiline_description" {
+			switch strings.ToLower(v) {
+			case "true":
+				multilineDescription = true
+			case "false":
+				multilineDescription = false
+			default:
+				return nil, fmt.Errorf("unknown value '%s' for multiline_description", v)
+			}
 		} else if k == "enum_as_int_or_string" {
 			switch strings.ToLower(v) {
 			case "true":
@@ -104,11 +117,33 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 			default:
 				return nil, fmt.Errorf("unknown value '%s' for enum_as_int_or_string", v)
 			}
+		} else if k == "proto_oneof" {
+			switch strings.ToLower(v) {
+			case "true":
+				protoOneof = true
+			case "false":
+				protoOneof = false
+			default:
+				return nil, fmt.Errorf("unknown value '%s' for proto_oneof", v)
+			}
+		} else if k == "int_native" {
+			switch strings.ToLower(v) {
+			case "true":
+				intNative = true
+			case "false":
+				intNative = false
+			default:
+				return nil, fmt.Errorf("unknown value '%s' for int_native", v)
+			}
 		} else if k == "additional_empty_schema" {
 			messagesWithEmptySchema = strings.Split(v, "+")
 		} else {
 			return nil, fmt.Errorf("unknown argument '%s' specified", k)
 		}
+	}
+
+	if !yaml && multilineDescription {
+		return nil, fmt.Errorf("multiline_description is only supported when yaml=true")
 	}
 
 	m := protomodel.NewModel(&request, perFile)
@@ -124,6 +159,7 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 
 	descriptionConfiguration := &DescriptionConfiguration{
 		IncludeDescriptionInSchema: includeDescription,
+		MultilineDescription:       multilineDescription,
 	}
 
 	g := newOpenAPIGenerator(
@@ -134,7 +170,10 @@ func generate(request plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorRespons
 		useRef,
 		descriptionConfiguration,
 		enumAsIntOrString,
-		messagesWithEmptySchema)
+		messagesWithEmptySchema,
+		protoOneof,
+		intNative,
+	)
 	return g.generateOutput(filesToGen)
 }
 

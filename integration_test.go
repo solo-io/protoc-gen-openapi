@@ -28,60 +28,89 @@ const goldenDir = "testdata/golden/"
 func TestOpenAPIGeneration(t *testing.T) {
 	testcases := []struct {
 		name       string
+		id         string
 		perPackage bool
 		genOpts    string
+		inputFiles map[string][]string
 		wantFiles  []string
 	}{
 		{
 			name:       "Per Package Generation",
+			id:         "test1",
 			perPackage: true,
 			genOpts:    "",
-			wantFiles:  []string{"testpkg.json", "testpkg2.json"},
+			inputFiles: map[string][]string{
+				"testpkg":  {"./testdata/testpkg/test1.proto", "./testdata/testpkg/test2.proto", "./testdata/testpkg/test6.proto"},
+				"testpkg2": {"./testdata/testpkg2/test3.proto"},
+			},
+			wantFiles: []string{"testpkg.json", "testpkg2.json"},
 		},
 		{
 			name:       "Single File Generation",
+			id:         "test2",
 			perPackage: false,
 			genOpts:    "single_file=true",
-			wantFiles:  []string{"openapiv3.json"},
+			inputFiles: map[string][]string{
+				"testpkg":  {"./testdata/testpkg/test1.proto", "./testdata/testpkg/test2.proto", "./testdata/testpkg/test6.proto"},
+				"testpkg2": {"./testdata/testpkg2/test3.proto"},
+			},
+			wantFiles: []string{"openapiv3.json"},
 		},
 		{
 			name:       "Use $ref in the output",
+			id:         "test3",
 			perPackage: false,
 			genOpts:    "single_file=true,use_ref=true",
-			wantFiles:  []string{"testRef/openapiv3.json"},
+			inputFiles: map[string][]string{
+				"testpkg":  {"./testdata/testpkg/test1.proto", "./testdata/testpkg/test2.proto", "./testdata/testpkg/test6.proto"},
+				"testpkg2": {"./testdata/testpkg2/test3.proto"},
+			},
+			wantFiles: []string{"testRef/openapiv3.json"},
+		},
+		{
+			name:       "Use yaml, proto_oneof, int_native, validation rules, and multiline_description",
+			id:         "test4",
+			perPackage: false,
+			genOpts:    "yaml=true,single_file=true,proto_oneof=true,int_native=true,multiline_description=true",
+			inputFiles: map[string][]string{
+				"testpkg":  {"./testdata/testpkg/test1.proto", "./testdata/testpkg/test2.proto", "./testdata/testpkg/test6.proto"},
+				"testpkg2": {"./testdata/testpkg2/test3.proto"},
+			},
+			wantFiles: []string{"test4/openapiv3.yaml"},
+		},
+		{
+			name:       "Test validation rules",
+			id:         "test5",
+			perPackage: false,
+			genOpts:    "yaml=true,single_file=true,proto_oneof=true,int_native=true,multiline_description=true",
+			inputFiles: map[string][]string{
+				"test5": {"./testdata/test5/rules.proto"},
+			},
+			wantFiles: []string{"test5/openapiv3.yaml"},
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
+			if len(tc.inputFiles) == 0 {
+				t.Fatalf("inputFiles must be set for test case %s", tc.name)
+			}
+
 			tempDir, err := os.MkdirTemp("", "openapi-temp")
 			if err != nil {
 				t.Fatal(err)
 			}
 			defer os.RemoveAll(tempDir)
 
-			// we assume that the package name is the same as the name of the folder containing the proto files.
-			packages := make(map[string][]string)
-			err = filepath.Walk("testdata", func(path string, info os.FileInfo, err error) error {
-				if strings.HasSuffix(path, ".proto") {
-					dir := filepath.Dir(path)
-					packages[dir] = append(packages[dir], path)
-				}
-				return nil
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			if tc.perPackage {
-				for _, files := range packages {
+				for _, files := range tc.inputFiles {
 					args := []string{"-Itestdata", "--openapi_out=" + tc.genOpts + ":" + tempDir}
 					args = append(args, files...)
 					protocOpenAPI(t, args)
 				}
 			} else {
 				args := []string{"-Itestdata", "--openapi_out=" + tc.genOpts + ":" + tempDir}
-				for _, files := range packages {
+				for _, files := range tc.inputFiles {
 					args = append(args, files...)
 				}
 				protocOpenAPI(t, args)

@@ -15,21 +15,21 @@
 package protomodel
 
 import (
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type EnumDescriptor struct {
 	baseDesc
-	*descriptor.EnumDescriptorProto
+	*descriptorpb.EnumDescriptorProto
 	Values []*EnumValueDescriptor // The values of this enum
 }
 
 type EnumValueDescriptor struct {
 	baseDesc
-	*descriptor.EnumValueDescriptorProto
+	*descriptorpb.EnumValueDescriptorProto
 }
 
-func newEnumDescriptor(desc *descriptor.EnumDescriptorProto, parent *MessageDescriptor, file *FileDescriptor, path pathVector) *EnumDescriptor {
+func newEnumDescriptor(desc *descriptorpb.EnumDescriptorProto, parent *MessageDescriptor, file *FileDescriptor, path pathVector) *EnumDescriptor {
 	var qualifiedName []string
 	if parent == nil {
 		qualifiedName = []string{desc.GetName()}

@@ -19,7 +19,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type FrontMatter struct {
@@ -47,7 +47,7 @@ func checkSingle(name string, old string, line string, tag string) string {
 	return result
 }
 
-func extractFrontMatter(name string, loc *descriptor.SourceCodeInfo_Location, file *FileDescriptor) FrontMatter {
+func extractFrontMatter(name string, loc *descriptorpb.SourceCodeInfo_Location, file *FileDescriptor) FrontMatter {
 	title := ""
 	overview := ""
 	description := ""

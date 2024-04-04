@@ -1,0 +1,261 @@
+components:
+  schemas:
+    testpkg.Days:
+      description: Some days
+      enum:
+      - MONDAY
+      - TUESDAY
+      - WEDNESDAY
+      type: string
+    testpkg.Msg1:
+      properties:
+        boolField:
+          type: boolean
+        doubleField:
+          type: number
+        floatField:
+          type: number
+        int32Field:
+          format: int32
+          type: integer
+        int64Field:
+          format: int64
+          type: integer
+        stringField:
+          type: string
+        test2:
+          properties:
+            field1:
+              description: field1 is a field
+              format: int32
+              type: integer
+            field3:
+              type: number
+            field4:
+              type: number
+            field5:
+              format: int32
+              type: integer
+            field6:
+              format: int32
+              type: integer
+            field7:
+              format: int32
+              type: integer
+            field8:
+              maximum: 4294967295
+              minimum: 0
+              type: integer
+            field9:
+              format: int64
+              type: integer
+            field10:
+              format: uint64
+              minimum: 0
+              type: integer
+            str:
+              description: an array of strings
+              items:
+                type: string
+              type: array
+          type: object
+      type: object
+    testpkg.Test2:
+      properties:
+        field1:
+          description: field1 is a field
+          format: int32
+          type: integer
+        field3:
+          type: number
+        field4:
+          type: number
+        field5:
+          format: int32
+          type: integer
+        field6:
+          format: int32
+          type: integer
+        field7:
+          format: int32
+          type: integer
+        field8:
+          maximum: 4294967295
+          minimum: 0
+          type: integer
+        field9:
+          format: int64
+          type: integer
+        field10:
+          format: uint64
+          minimum: 0
+          type: integer
+        str:
+          description: an array of strings
+          items:
+            type: string
+          type: array
+      type: object
+    testpkg.TypeX:
+      description: |-
+        Some good words
+        Xsome Xbad xwords
+        `xsome xbad xwords`
+        some `xbad` words
+        some `xbas` xwords
+        some [bad](normallink) normal
+        some [bad][testpkg.TypeY] normal
+        ```
+        doesntmatter
+        ```
+        thismatters
+        this is fine
+      type: object
+    testpkg.TypeY:
+      description: Comment for this type
+      type: object
+    testpkg.TypeZ:
+      type: object
+    testpkg2.AEnum:
+      enum:
+      - ONE
+      - TWO
+      - THREE
+      type: string
+    testpkg2.MessageOneOf:
+      oneOf:
+      - not:
+          anyOf:
+          - required:
+            - number
+          - required:
+            - name
+      - required:
+        - number
+      - required:
+        - name
+      properties:
+        name:
+          type: string
+        number:
+          description: Valid port number
+          maximum: 4294967295
+          minimum: 0
+          type: integer
+      type: object
+    testpkg2.Test3:
+      description: Test3 is a message that I use for testing.
+      oneOf:
+      - not:
+          anyOf:
+          - required:
+            - oneoffield1
+          - required:
+            - oneoffield2
+      - required:
+        - oneoffield1
+      - required:
+        - oneoffield2
+      properties:
+        aEnum:
+          enum:
+          - ONE
+          - TWO
+          - THREE
+          type: string
+        deprecate:
+          type: string
+        field1:
+          description: field1 is a field
+          format: int32
+          type: integer
+        field3:
+          type: number
+        field4:
+          type: number
+        field5:
+          format: int32
+          type: integer
+        field6:
+          format: int32
+          type: integer
+        field7:
+          format: int32
+          type: integer
+        field8:
+          maximum: 4294967295
+          minimum: 0
+          type: integer
+        field17:
+          format: int64
+          type: integer
+        field18:
+          format: uint64
+          minimum: 0
+          type: integer
+        mapField:
+          additionalProperties:
+            properties:
+              field1:
+                type: string
+              field2:
+                format: int32
+                type: integer
+            type: object
+          description: |-
+            first line of comment.
+
+            second line of comment.
+          type: object
+        messageOneOfField:
+          description: messageoneof comment
+          oneOf:
+          - not:
+              anyOf:
+              - required:
+                - number
+              - required:
+                - name
+          - required:
+            - number
+          - required:
+            - name
+          properties:
+            name:
+              type: string
+            number:
+              description: Valid port number
+              maximum: 4294967295
+              minimum: 0
+              type: integer
+          type: object
+        oneoffield1:
+          type: string
+        oneoffield2:
+          type: string
+        str:
+          description: an array of strings
+          items:
+            type: string
+          type: array
+        test3Nested:
+          properties:
+            nested1:
+              type: string
+            nested2:
+              type: number
+          type: object
+      type: object
+    testpkg2.Test3_Value:
+      properties:
+        field1:
+          type: string
+        field2:
+          format: int32
+          type: integer
+      type: object
+info:
+  title: OpenAPI Spec for Solo APIs.
+  version: ""
+openapi: 3.0.1
+paths: null

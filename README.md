@@ -15,22 +15,17 @@ on Debian or Ubuntu, you can install it from the package manager:
 sudo apt-get install -y golang
 ```
 
-To build, first ensure you have the protocol compiler (protoc):
-
-```bash
-go get github.com/golang/protobuf/proto
-```
 To build, run the following command from this project directory:
 
 ```bash
-go build
+make build
 ```
 
 Then ensure the resulting `protoc-gen-openapi` binary is in your `PATH`. A recommended location
 is `$HOME/bin`:
 
 ```bash
-cp protoc-gen-openapi $HOME/bin
+cp _output/.bin/protoc-gen-openapi $HOME/bin
 ```
 
 Since the following is often in your `$HOME/.bashrc` file:
@@ -69,7 +64,13 @@ Other supported options are:
     *   when set to `true`, the output is in yaml file.
 *   `include_description`
     *   when set to `true`, the openapi schema will include descriptions, generated from the proto message comment.
+*   `multiline_description`
+    *  when set to `true`, the openapi schema will include descriptions, generated from the proto message comment, that can span multiple lines. This can only be used with `yaml=true`.
 *   `enum_as_int_or_string`
     *   when set to `true`, the openapi schema will include `x-kubernetes-int-or-string` on enums.
 *   `additional_empty_schemas`
     *   a `+` separated list of message names (`core.solo.io.Status`), whose generated schema should be an empty object that accepts all values.
+*  `proto_oneof`
+    *   when set to `true`, the openapi schema will include `oneOf` emulating the behavior of proto `oneof`.
+*  `int_native`
+    *   when set to `true`, the native openapi schemas will be used for Integer types instead of Solo wrappers that add Kubernetes extension headers to the schema to treat int as strings

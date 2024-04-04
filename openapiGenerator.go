@@ -18,19 +18,23 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"os"
 	"path"
 	"strings"
 
-	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
-
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/ghodss/yaml"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/pluginpb"
+
+	"github.com/solo-io/protoc-gen-openapi/pkg/markers"
+	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
 )
+
+var descriptionExclusionMarkers = []string{"$hide_from_docs", "$hide", "@exclude"}
 
 // Some special types with predefined schemas.
 // This is to catch cases where solo apis contain recursive definitions
@@ -103,11 +107,23 @@ type openapiGenerator struct {
 
 	// @solo.io customizations to define schemas for certain messages
 	customSchemasByMessageName map[string]openapi3.Schema
+
+	// If set to true, OpenAPI schema will include schema to emulate behavior of protobuf oneof fields
+	protoOneof bool
+
+	// If set to true, native OpenAPI integer scehmas will be used for integer types instead of Solo wrappers
+	// that add Kubernetes extension headers to the schema to treat int as strings.
+	intNative bool
+
+	markerRegistry *markers.Registry
 }
 
 type DescriptionConfiguration struct {
 	// Whether or not to include a description in the generated open api schema
 	IncludeDescriptionInSchema bool
+
+	// Whether or not the description for properties should be allowed to span multiple lines
+	MultilineDescription bool
 }
 
 func newOpenAPIGenerator(
@@ -119,7 +135,14 @@ func newOpenAPIGenerator(
 	descriptionConfiguration *DescriptionConfiguration,
 	enumAsIntOrString bool,
 	messagesWithEmptySchema []string,
+	protoOneof bool,
+	intNative bool,
 ) *openapiGenerator {
+	mRegistry, err := markers.NewRegistry()
+	if err != nil {
+		log.Panicf("error initializing marker registry: %v", err)
+	}
+
 	return &openapiGenerator{
 		model:                      model,
 		perFile:                    perFile,
@@ -129,6 +152,9 @@ func newOpenAPIGenerator(
 		descriptionConfiguration:   descriptionConfiguration,
 		enumAsIntOrString:          enumAsIntOrString,
 		customSchemasByMessageName: buildCustomSchemasByMessageName(messagesWithEmptySchema),
+		protoOneof:                 protoOneof,
+		intNative:                  intNative,
+		markerRegistry:             mRegistry,
 	}
 }
 
@@ -162,8 +188,8 @@ func buildCustomSchemasByMessageName(messagesWithEmptySchema []string) map[strin
 	return schemasByMessageName
 }
 
-func (g *openapiGenerator) generateOutput(filesToGen map[*protomodel.FileDescriptor]bool) (*plugin.CodeGeneratorResponse, error) {
-	response := plugin.CodeGeneratorResponse{}
+func (g *openapiGenerator) generateOutput(filesToGen map[*protomodel.FileDescriptor]bool) (*pluginpb.CodeGeneratorResponse, error) {
+	response := pluginpb.CodeGeneratorResponse{}
 
 	if g.singleFile {
 		g.generateSingleFileOutput(filesToGen, &response)
@@ -195,7 +221,8 @@ func (g *openapiGenerator) generateOutput(filesToGen map[*protomodel.FileDescrip
 func (g *openapiGenerator) getFileContents(file *protomodel.FileDescriptor,
 	messages map[string]*protomodel.MessageDescriptor,
 	enums map[string]*protomodel.EnumDescriptor,
-	services map[string]*protomodel.ServiceDescriptor) {
+	services map[string]*protomodel.ServiceDescriptor,
+) {
 	for _, m := range file.AllMessages {
 		messages[g.relativeName(m)] = m
 	}
@@ -210,8 +237,8 @@ func (g *openapiGenerator) getFileContents(file *protomodel.FileDescriptor,
 }
 
 func (g *openapiGenerator) generatePerFileOutput(filesToGen map[*protomodel.FileDescriptor]bool, pkg *protomodel.PackageDescriptor,
-	response *plugin.CodeGeneratorResponse) {
-
+	response *pluginpb.CodeGeneratorResponse,
+) {
 	for _, file := range pkg.Files {
 		if _, ok := filesToGen[file]; ok {
 			g.currentFrontMatterProvider = file
@@ -228,10 +255,9 @@ func (g *openapiGenerator) generatePerFileOutput(filesToGen map[*protomodel.File
 			response.File = append(response.File, &rf)
 		}
 	}
-
 }
 
-func (g *openapiGenerator) generateSingleFileOutput(filesToGen map[*protomodel.FileDescriptor]bool, response *plugin.CodeGeneratorResponse) {
+func (g *openapiGenerator) generateSingleFileOutput(filesToGen map[*protomodel.FileDescriptor]bool, response *pluginpb.CodeGeneratorResponse) {
 	messages := make(map[string]*protomodel.MessageDescriptor)
 	enums := make(map[string]*protomodel.EnumDescriptor)
 	services := make(map[string]*protomodel.ServiceDescriptor)
@@ -243,11 +269,12 @@ func (g *openapiGenerator) generateSingleFileOutput(filesToGen map[*protomodel.F
 	}
 
 	rf := g.generateFile("openapiv3", &protomodel.FileDescriptor{}, messages, enums, services)
-	response.File = []*plugin.CodeGeneratorResponse_File{&rf}
+	response.File = []*pluginpb.CodeGeneratorResponse_File{&rf}
 }
 
 func (g *openapiGenerator) generatePerPackageOutput(filesToGen map[*protomodel.FileDescriptor]bool, pkg *protomodel.PackageDescriptor,
-	response *plugin.CodeGeneratorResponse) {
+	response *pluginpb.CodeGeneratorResponse,
+) {
 	// We need to produce a file for this package.
 
 	// Decide which types need to be included in the generated file.
@@ -275,8 +302,8 @@ func (g *openapiGenerator) generateFile(name string,
 	pkg *protomodel.FileDescriptor,
 	messages map[string]*protomodel.MessageDescriptor,
 	enums map[string]*protomodel.EnumDescriptor,
-	_ map[string]*protomodel.ServiceDescriptor) plugin.CodeGeneratorResponse_File {
-
+	_ map[string]*protomodel.ServiceDescriptor,
+) pluginpb.CodeGeneratorResponse_File {
 	g.messages = messages
 
 	allSchemas := make(map[string]*openapi3.SchemaRef)
@@ -352,7 +379,7 @@ func (g *openapiGenerator) generateFile(name string,
 		g.buffer.Write(b)
 	}
 
-	return plugin.CodeGeneratorResponse_File{
+	return pluginpb.CodeGeneratorResponse_File{
 		Name:    filename,
 		Content: proto.String(g.buffer.String()),
 	}
@@ -389,13 +416,139 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	}
 	o := openapi3.NewObjectSchema()
 	o.Description = g.generateDescription(message)
+	msgRules := g.validationRules(message)
+	g.markerRegistry.MustApplyRulesToSchema(msgRules, o, markers.TargetType)
 
+	oneOfFields := make(map[int32][]string)
 	for _, field := range message.Fields {
+		repeated := field.IsRepeated()
+		fieldName := g.fieldName(field)
+		fieldDesc := g.generateDescription(field)
+		fieldRules := g.validationRules(field)
+
+		schemaType := g.markerRegistry.GetSchemaType(fieldRules)
+		if schemaType != "" {
+			tmp := getSoloSchemaForMarkerType(schemaType)
+			schema := getSchemaIfRepeated(&tmp, repeated)
+			schema.Description = fieldDesc
+			g.markerRegistry.MustApplyRulesToSchema(fieldRules, schema, markers.TargetType)
+			o.WithProperty(fieldName, schema)
+			continue
+		}
+
 		sr := g.fieldTypeRef(field)
-		o.WithProperty(g.fieldName(field), sr.Value)
+		g.markerRegistry.MustApplyRulesToSchema(fieldRules, sr.Value, markers.TargetType)
+		o.WithProperty(fieldName, sr.Value)
+
+		// If the field is a oneof, we need to add the oneof property to the schema
+		if field.OneofIndex != nil {
+			idx := *field.OneofIndex
+			oneOfFields[idx] = append(oneOfFields[idx], fieldName)
+		}
+	}
+
+	if g.protoOneof {
+		// Add protobuf oneof schema for this message
+		oneOfs := make([][]*openapi3.Schema, len(oneOfFields))
+		for idx := range oneOfFields {
+			// oneOfSchemas is a collection (not and required schemas) that should be assigned to the schemas's oneOf field
+			oneOfSchemas := newProtoOneOfSchema(oneOfFields[idx]...)
+			oneOfs[idx] = append(oneOfs[idx], oneOfSchemas...)
+		}
+
+		switch len(oneOfs) {
+		case 0:
+			// no oneof fields
+		case 1:
+			o.OneOf = getSchemaRefs(oneOfs[0]...)
+		default:
+			// Wrap collected OneOf refs with AllOf schema
+			for _, schemas := range oneOfs {
+				oneOfRef := openapi3.NewOneOfSchema(schemas...)
+				o.AllOf = append(o.AllOf, oneOfRef.NewRef())
+			}
+		}
 	}
 
 	return o
+}
+
+func getSoloSchemaForMarkerType(t markers.Type) openapi3.Schema {
+	switch t {
+	case markers.TypeObject:
+		return specialSoloTypes["google.protobuf.Struct"]
+	case markers.TypeValue:
+		return specialSoloTypes["google.protobuf.Value"]
+	default:
+		log.Panicf("unexpected schema type %v", t)
+		return openapi3.Schema{}
+	}
+}
+
+func getSchemaRefs(schemas ...*openapi3.Schema) openapi3.SchemaRefs {
+	var refs openapi3.SchemaRefs
+	for _, schema := range schemas {
+		refs = append(refs, schema.NewRef())
+	}
+	return refs
+}
+
+func getSchemaIfRepeated(schema *openapi3.Schema, repeated bool) *openapi3.Schema {
+	if repeated {
+		schema = openapi3.NewArraySchema().WithItems(schema)
+	}
+	return schema
+}
+
+// newProtoOneOfSchema returns a schema that can be used to represent a collection of fields
+// that must be encoded as a oneOf in OpenAPI.
+// For e.g., if the fields x and y are a part of a proto oneof, then they can be represented as
+// follows, such that only one of x or y is required and specifying neither is also acceptable.
+//
+//	{
+//		"not": {
+//			"anyOf": [
+//				{
+//					"required": [
+//						"x"
+//					]
+//				},
+//				{
+//					"required": [
+//						"y"
+//					]
+//				}
+//			]
+//		}
+//	},
+//	{
+//		"required": [
+//			"x"
+//		]
+//	},
+//	{
+//		"required": [
+//			"y"
+//		]
+//	}
+func newProtoOneOfSchema(fields ...string) []*openapi3.Schema {
+	fieldSchemas := make([]*openapi3.Schema, len(fields))
+	for i, field := range fields {
+		schema := openapi3.NewSchema()
+		schema.Required = []string{field}
+		fieldSchemas[i] = schema
+	}
+	// convert fieldSchema to a oneOf schema
+	anyOfSchema := openapi3.NewAnyOfSchema(fieldSchemas...)
+	notAnyOfSchema := openapi3.NewSchema()
+	notAnyOfSchema.Not = anyOfSchema.NewRef()
+
+	allOneOfSchemas := make([]*openapi3.Schema, len(fieldSchemas)+1)
+	allOneOfSchemas[0] = notAnyOfSchema
+	for i, fieldSchema := range fieldSchemas {
+		allOneOfSchemas[i+1] = fieldSchema
+	}
+	return allOneOfSchemas
 }
 
 func (g *openapiGenerator) generateEnum(enum *protomodel.EnumDescriptor, allSchemas map[string]*openapi3.SchemaRef) {
@@ -448,6 +601,10 @@ func (g *openapiGenerator) absoluteName(desc protomodel.CoreDesc) string {
 // converts the first section of the leading comment or the description of the proto
 // to a single line of description.
 func (g *openapiGenerator) generateDescription(desc protomodel.CoreDesc) string {
+	if g.descriptionConfiguration.MultilineDescription {
+		return g.generateMultiLineDescription(desc)
+	}
+
 	if !g.descriptionConfiguration.IncludeDescriptionInSchema {
 		return ""
 	}
@@ -462,32 +619,109 @@ func (g *openapiGenerator) generateDescription(desc protomodel.CoreDesc) string 
 	return strings.Join(strings.Fields(t), " ")
 }
 
+func (g *openapiGenerator) generateMultiLineDescription(desc protomodel.CoreDesc) string {
+	if !g.descriptionConfiguration.IncludeDescriptionInSchema {
+		return ""
+	}
+	comments, _ := g.parseComments(desc)
+	return comments
+}
+
+func (g *openapiGenerator) validationRules(desc protomodel.CoreDesc) []string {
+	_, validationRules := g.parseComments(desc)
+	return validationRules
+}
+
+func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments string, validationRules []string) {
+	c := strings.TrimSpace(desc.Location().GetLeadingComments())
+	blocks := strings.Split(c, "\n\n")
+
+	var sb strings.Builder
+	for i, block := range blocks {
+		if shouldNotRenderDesc(strings.TrimSpace(block)) {
+			continue
+		}
+		if i > 0 {
+			sb.WriteString("\n\n")
+		}
+		var blockSb strings.Builder
+		lines := strings.Split(block, "\n")
+		for i, line := range lines {
+			if i > 0 {
+				blockSb.WriteString("\n")
+			}
+			l := strings.TrimSpace(line)
+			if shouldNotRenderDesc(l) {
+				continue
+			}
+			if strings.HasPrefix(l, markers.Kubebuilder) {
+				validationRules = append(validationRules, l)
+				continue
+			}
+			if len(line) > 0 && line[0] == ' ' {
+				line = line[1:]
+			}
+			blockSb.WriteString(strings.TrimRight(line, " "))
+		}
+
+		block = blockSb.String()
+		sb.WriteString(block)
+	}
+
+	comments = strings.TrimSpace(sb.String())
+	return
+}
+
+func shouldNotRenderDesc(desc string) bool {
+	desc = strings.TrimSpace(desc)
+	for _, marker := range descriptionExclusionMarkers {
+		if strings.HasPrefix(desc, marker) {
+			return true
+		}
+	}
+	return false
+}
+
 func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi3.Schema {
 	var schema *openapi3.Schema
 	var isMap bool
 	switch *field.Type {
-	case descriptor.FieldDescriptorProto_TYPE_FLOAT, descriptor.FieldDescriptorProto_TYPE_DOUBLE:
+	case descriptorpb.FieldDescriptorProto_TYPE_FLOAT, descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:
 		schema = openapi3.NewFloat64Schema()
 
-	case descriptor.FieldDescriptorProto_TYPE_INT32, descriptor.FieldDescriptorProto_TYPE_SINT32, descriptor.FieldDescriptorProto_TYPE_SFIXED32:
+	case descriptorpb.FieldDescriptorProto_TYPE_INT32, descriptorpb.FieldDescriptorProto_TYPE_SINT32, descriptorpb.FieldDescriptorProto_TYPE_SFIXED32:
 		schema = openapi3.NewInt32Schema()
 
-	case descriptor.FieldDescriptorProto_TYPE_INT64, descriptor.FieldDescriptorProto_TYPE_SINT64, descriptor.FieldDescriptorProto_TYPE_SFIXED64:
-		schema = g.generateSoloInt64Schema()
+	case descriptorpb.FieldDescriptorProto_TYPE_INT64, descriptorpb.FieldDescriptorProto_TYPE_SINT64,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64, descriptorpb.FieldDescriptorProto_TYPE_FIXED64:
+		if g.intNative {
+			schema = openapi3.NewInt64Schema()
+		} else {
+			schema = g.generateSoloInt64Schema()
+		}
 
-	case descriptor.FieldDescriptorProto_TYPE_UINT64, descriptor.FieldDescriptorProto_TYPE_FIXED64:
-		schema = g.generateSoloInt64Schema()
-
-	case descriptor.FieldDescriptorProto_TYPE_UINT32, descriptor.FieldDescriptorProto_TYPE_FIXED32:
+	case descriptorpb.FieldDescriptorProto_TYPE_FIXED32:
 		schema = openapi3.NewInt32Schema()
 
-	case descriptor.FieldDescriptorProto_TYPE_BOOL:
+	case descriptorpb.FieldDescriptorProto_TYPE_UINT32:
+		schema = openapi3.NewIntegerSchema().WithMin(0).WithMax(math.MaxUint32)
+
+	case descriptorpb.FieldDescriptorProto_TYPE_UINT64:
+		if g.intNative {
+			// we don't set the max here beacause it is too large to be represented without scientific notation
+			// in YAML format
+			schema = openapi3.NewIntegerSchema().WithMin(0).WithFormat("uint64")
+		} else {
+			schema = g.generateSoloInt64Schema()
+		}
+
+	case descriptorpb.FieldDescriptorProto_TYPE_BOOL:
 		schema = openapi3.NewBoolSchema()
 
-	case descriptor.FieldDescriptorProto_TYPE_STRING:
+	case descriptorpb.FieldDescriptorProto_TYPE_STRING:
 		schema = openapi3.NewStringSchema()
 
-	case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
+	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
 		msg := field.FieldType.(*protomodel.MessageDescriptor)
 		if soloSchema, ok := g.customSchemasByMessageName[g.absoluteName(msg)]; ok {
 			// Allow for defining special Solo types
@@ -507,10 +741,10 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 			schema = g.generateMessageSchema(msg)
 		}
 
-	case descriptor.FieldDescriptorProto_TYPE_BYTES:
+	case descriptorpb.FieldDescriptorProto_TYPE_BYTES:
 		schema = openapi3.NewBytesSchema()
 
-	case descriptor.FieldDescriptorProto_TYPE_ENUM:
+	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
 		enum := field.FieldType.(*protomodel.EnumDescriptor)
 		schema = g.generateEnumSchema(enum)
 	}
@@ -530,7 +764,7 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 func (g *openapiGenerator) fieldTypeRef(field *protomodel.FieldDescriptor) *openapi3.SchemaRef {
 	s := g.fieldType(field)
 	var ref string
-	if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+	if *field.Type == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		msg := field.FieldType.(*protomodel.MessageDescriptor)
 		// only generate `$ref` for top level messages.
 		if _, ok := g.messages[g.relativeName(field.FieldType)]; ok && msg.Parent == nil {

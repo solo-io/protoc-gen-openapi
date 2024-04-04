@@ -16,24 +16,24 @@ package protocgen
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
-	"github.com/golang/protobuf/proto"
-	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 // GenerateFn is a function definition for encapsulating the ore logic of code generation.
-type GenerateFn func(req plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorResponse, error)
+type GenerateFn func(req pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorResponse, error)
 
-// Generate is a wrapper for a main function of a protoc generator plugin.
+// Generate is a wrapper for a main function of a protoc generator plugin
 func Generate(fn GenerateFn) {
-	data, err := ioutil.ReadAll(os.Stdin)
+	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		fatal("Unable to read input proto: %v\n", err)
 	}
 
-	var request plugin.CodeGeneratorRequest
+	var request pluginpb.CodeGeneratorRequest
 	if err = proto.Unmarshal(data, &request); err != nil {
 		fatal("Unable to parse input proto: %v\n", err)
 	}

@@ -15,15 +15,15 @@
 package protomodel
 
 import (
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type LocationDescriptor struct {
-	*descriptor.SourceCodeInfo_Location
+	*descriptorpb.SourceCodeInfo_Location
 	File *FileDescriptor
 }
 
-func newLocationDescriptor(desc *descriptor.SourceCodeInfo_Location, file *FileDescriptor) LocationDescriptor {
+func newLocationDescriptor(desc *descriptorpb.SourceCodeInfo_Location, file *FileDescriptor) LocationDescriptor {
 	return LocationDescriptor{
 		SourceCodeInfo_Location: desc,
 		File:                    file,
