@@ -15,11 +15,6 @@ on Debian or Ubuntu, you can install it from the package manager:
 sudo apt-get install -y golang
 ```
 
-To build, first ensure you have the protocol compiler (protoc):
-
-```bash
-go get github.com/golang/protobuf/proto
-```
 To build, run the following command from this project directory:
 
 ```bash

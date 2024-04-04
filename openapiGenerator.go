@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"os"
 	"path"
@@ -117,6 +118,8 @@ type openapiGenerator struct {
 	// If set to true, native OpenAPI integer scehmas will be used for integer types instead of Solo wrappers
 	// that add Kubernetes extension headers to the schema to treat int as strings.
 	intNative bool
+
+	markerRegistry *markers.Registry
 }
 
 type DescriptionConfiguration struct {
@@ -139,6 +142,11 @@ func newOpenAPIGenerator(
 	protoOneof bool,
 	intNative bool,
 ) *openapiGenerator {
+	mRegistry, err := markers.NewRegistry()
+	if err != nil {
+		log.Panicf("error initializing marker registry: %v", err)
+	}
+
 	return &openapiGenerator{
 		model:                      model,
 		perFile:                    perFile,
@@ -150,6 +158,7 @@ func newOpenAPIGenerator(
 		customSchemasByMessageName: buildCustomSchemasByMessageName(messagesWithEmptySchema),
 		protoOneof:                 protoOneof,
 		intNative:                  intNative,
+		markerRegistry:             mRegistry,
 	}
 }
 
@@ -412,7 +421,7 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	o := openapi3.NewObjectSchema()
 	o.Description = g.generateDescription(message)
 	msgRules := g.validationRules(message)
-	markers.ApplyToSchema(o, msgRules)
+	g.markerRegistry.MustApplyRulesToSchema(msgRules, o, markers.TargetType)
 
 	oneOfFields := make(map[int32][]string)
 	for _, field := range message.Fields {
@@ -421,18 +430,18 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 		fieldDesc := g.generateDescription(field)
 		fieldRules := g.validationRules(field)
 
-		schemaType := markers.ParseType(fieldRules)
+		schemaType := g.markerRegistry.GetSchemaType(fieldRules)
 		if schemaType != "" {
 			tmp := getSoloSchemaForMarkerType(schemaType)
 			schema := getSchemaIfRepeated(&tmp, repeated)
 			schema.Description = fieldDesc
-			markers.ApplyToSchema(schema, fieldRules)
+			g.markerRegistry.MustApplyRulesToSchema(fieldRules, schema, markers.TargetType)
 			o.WithProperty(fieldName, schema)
 			continue
 		}
 
 		sr := g.fieldTypeRef(field)
-		markers.ApplyToSchema(sr.Value, fieldRules)
+		g.markerRegistry.MustApplyRulesToSchema(fieldRules, sr.Value, markers.TargetType)
 		o.WithProperty(fieldName, sr.Value)
 
 		// If the field is a oneof, we need to add the oneof property to the schema
@@ -468,7 +477,7 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	return o
 }
 
-func getSoloSchemaForMarkerType(t string) openapi3.Schema {
+func getSoloSchemaForMarkerType(t markers.Type) openapi3.Schema {
 	switch t {
 	case markers.TypeObject:
 		return specialSoloTypes["google.protobuf.Struct"]

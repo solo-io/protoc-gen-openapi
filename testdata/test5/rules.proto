@@ -4,9 +4,9 @@ package test5;
 
 // This is a top-level message.
 //
-// +kubebuilder:validation:XValidation:rule="self.msgNested.a > 0";;message="must be a postive value"
-// +kubebuilder:validation:XValidation:rule="self.nonNested != ''";;message='cannot be empty'
-// +kubebuilder:validation:XValidation:rule="self.msgNested.b != 'default'";;messageExpression='"b got invalid value: " + self.msgNested.x'
+// +kubebuilder:validation:XValidation:rule="self.msgNested.a > 0",message="must be a postive value"
+// +kubebuilder:validation:XValidation:rule="self.nonNested != ''",message="cannot be empty"
+// +kubebuilder:validation:XValidation:rule="self.msgNested.b != 'default'",messageExpression="'b got invalid value: ' + self.msgNested.x"
 message Msg {
   nested msg_nested = 1;
 
@@ -14,7 +14,7 @@ message Msg {
   // this block comment
   string non_nested = 2;
 
-  // +kubebuilder:validation:XValidation:rule="self.all(x, x.contains('a string'))";;message="must contain 'a string'"
+  // +kubebuilder:validation:XValidation:rule="self.all(x, x.contains('a string'))",message="must contain 'a string'"
   repeated string list = 3;
 
   // Recursive object.
@@ -31,8 +31,8 @@ message Msg {
 
   // This is a nested message.
   //
-  // +kubebuilder:validation:XValidation:rule="self.a > 0";;message="must be a postive value"
-  // +kubebuilder:validation:XValidation:rule="self.b != 'default'";;messageExpression='"b got invalid value: " + self.x'
+  // +kubebuilder:validation:XValidation:rule="self.a > 0",message="must be a postive value"
+  // +kubebuilder:validation:XValidation:rule="self.b != 'default'",messageExpression="'b got invalid value: ' + self.x"
   message nested {
     int32 a = 1;
     string b = 2;
