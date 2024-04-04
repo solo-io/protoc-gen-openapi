@@ -8,6 +8,11 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
+const (
+	// Kubebuilder marker used in comments
+	Kubebuilder = "+kubebuilder:"
+)
+
 var ValidationMarkers = mustMakeAllWithPrefix("kubebuilder:validation", markers.DescribesField,
 	XValidation{},
 	Type(""),

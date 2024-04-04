@@ -34,10 +34,6 @@ import (
 	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
 )
 
-const (
-	validationMarker = "+kubebuilder:validation:"
-)
-
 var descriptionExclusionMarkers = []string{"$hide_from_docs", "$hide", "@exclude"}
 
 // Some special types with predefined schemas.
@@ -483,8 +479,10 @@ func getSoloSchemaForMarkerType(t markers.Type) openapi3.Schema {
 		return specialSoloTypes["google.protobuf.Struct"]
 	case markers.TypeValue:
 		return specialSoloTypes["google.protobuf.Value"]
+	default:
+		log.Panicf("unexpected schema type %v", t)
+		return openapi3.Schema{}
 	}
-	return openapi3.Schema{}
 }
 
 func getSchemaRefs(schemas ...*openapi3.Schema) openapi3.SchemaRefs {
@@ -656,7 +654,7 @@ func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments str
 			if shouldNotRenderDesc(l) {
 				continue
 			}
-			if strings.HasPrefix(l, validationMarker) {
+			if strings.HasPrefix(l, markers.Kubebuilder) {
 				validationRules = append(validationRules, l)
 				continue
 			}
