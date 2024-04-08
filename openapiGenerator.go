@@ -426,6 +426,12 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 		fieldDesc := g.generateDescription(field)
 		fieldRules := g.validationRules(field)
 
+		// If the field is a oneof, we need to add the oneof property to the schema
+		if field.OneofIndex != nil {
+			idx := *field.OneofIndex
+			oneOfFields[idx] = append(oneOfFields[idx], fieldName)
+		}
+
 		schemaType := g.markerRegistry.GetSchemaType(fieldRules)
 		if schemaType != "" {
 			tmp := getSoloSchemaForMarkerType(schemaType)
@@ -439,12 +445,6 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 		sr := g.fieldTypeRef(field)
 		g.markerRegistry.MustApplyRulesToSchema(fieldRules, sr.Value, markers.TargetType)
 		o.WithProperty(fieldName, sr.Value)
-
-		// If the field is a oneof, we need to add the oneof property to the schema
-		if field.OneofIndex != nil {
-			idx := *field.OneofIndex
-			oneOfFields[idx] = append(oneOfFields[idx], fieldName)
-		}
 	}
 
 	if g.protoOneof {

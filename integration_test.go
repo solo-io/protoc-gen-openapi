@@ -32,6 +32,7 @@ func TestOpenAPIGeneration(t *testing.T) {
 		perPackage bool
 		genOpts    string
 		inputFiles map[string][]string
+		protocArgs []string
 		wantFiles  []string
 	}{
 		{

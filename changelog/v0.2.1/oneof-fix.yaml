@@ -1,0 +1,12 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/protoc-gen-openapi/issues/20
+    resolvesIssue: true
+    description: |
+      Adds support for the following:
+        - encodes proto oneof to OpenAPI oneOf schema
+        - multi-line descriptions for properties when using yaml=true
+        - fixes uint32 schema to use min-max and not int32 format
+        - adds proto for custom field options support
+        - updates go protobuf packages to use new lib as per https://protobuf.dev/reference/go/faq/#versions
+        - build changes for proto code generation
