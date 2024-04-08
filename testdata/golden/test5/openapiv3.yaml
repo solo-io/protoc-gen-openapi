@@ -2,6 +2,21 @@ components:
   schemas:
     test5.Msg:
       description: This is a top-level message.
+      oneOf:
+      - not:
+          anyOf:
+          - required:
+            - oa
+          - required:
+            - ob
+          - required:
+            - oc
+      - required:
+        - oa
+      - required:
+        - ob
+      - required:
+        - oc
       properties:
         list:
           items:
@@ -25,6 +40,13 @@ components:
             rule: self.b != 'default'
         nonNested:
           type: string
+        oa:
+          type: string
+        ob:
+          x-kubernetes-preserve-unknown-fields: true
+        oc:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
         recursiveObj:
           description: Recursive object.
           items:

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package test5;
 
+import "struct.proto";
+
 // This is a top-level message.
 //
 // +kubebuilder:validation:XValidation:rule="self.msgNested.a > 0",message="must be a postive value"
@@ -28,6 +30,17 @@ message Msg {
   // +kubebuilder:validation:Type=value
   // +kubebuilder:validation:XValidation:rule="self.x = 1"
   repeated Recursive recursive_val = 5;
+
+  // OneOf message.
+  oneof oneof_field {
+    string oa = 6;
+
+    // +kubebuilder:validation:Type=value
+    google.protobuf.Value ob = 7;
+
+    // +kubebuilder:validation:Type=object
+    google.protobuf.Struct oc = 8;
+  }
 
   // This is a nested message.
   //
