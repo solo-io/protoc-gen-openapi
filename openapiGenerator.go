@@ -420,6 +420,7 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	g.markerRegistry.MustApplyRulesToSchema(msgRules, o, markers.TargetType)
 
 	oneOfFields := make(map[int32][]string)
+	var requiredFields []string
 	for _, field := range message.Fields {
 		repeated := field.IsRepeated()
 		fieldName := g.fieldName(field)
@@ -432,19 +433,27 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 			oneOfFields[idx] = append(oneOfFields[idx], fieldName)
 		}
 
-		schemaType := g.markerRegistry.GetSchemaType(fieldRules)
+		if g.markerRegistry.IsRequired(fieldRules) {
+			requiredFields = append(requiredFields, fieldName)
+		}
+
+		schemaType := g.markerRegistry.GetSchemaType(fieldRules, markers.TargetField)
 		if schemaType != "" {
 			tmp := getSoloSchemaForMarkerType(schemaType)
 			schema := getSchemaIfRepeated(&tmp, repeated)
 			schema.Description = fieldDesc
-			g.markerRegistry.MustApplyRulesToSchema(fieldRules, schema, markers.TargetType)
+			g.mustApplyFieldRules(field, fieldRules, schema)
 			o.WithProperty(fieldName, schema)
 			continue
 		}
 
 		sr := g.fieldTypeRef(field)
-		g.markerRegistry.MustApplyRulesToSchema(fieldRules, sr.Value, markers.TargetType)
+		g.mustApplyFieldRules(field, fieldRules, sr.Value)
 		o.WithProperty(fieldName, sr.Value)
+	}
+
+	if len(requiredFields) > 0 {
+		o.Required = requiredFields
 	}
 
 	if g.protoOneof {
@@ -471,6 +480,18 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	}
 
 	return o
+}
+
+func (g *openapiGenerator) mustApplyFieldRules(
+	field *protomodel.FieldDescriptor,
+	rules []string,
+	schema *openapi3.Schema,
+) {
+	if *field.Type == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		g.markerRegistry.MustApplyRulesToSchema(rules, schema, markers.TargetType)
+		return
+	}
+	g.markerRegistry.MustApplyRulesToSchema(rules, schema, markers.TargetField)
 }
 
 func getSoloSchemaForMarkerType(t markers.Type) openapi3.Schema {

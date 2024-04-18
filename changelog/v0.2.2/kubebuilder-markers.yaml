@@ -1,0 +1,7 @@
+changelog:
+  - type: NEW_FEATURE
+    issueLink: https://github.com/solo-io/protoc-gen-openapi/issues/22
+    resolvesIssue: true
+    description: |
+      Adds support for additional kubebuilder markers to configure
+      the generated OpenAPI schema.

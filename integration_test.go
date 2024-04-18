@@ -89,6 +89,16 @@ func TestOpenAPIGeneration(t *testing.T) {
 			},
 			wantFiles: []string{"test5/openapiv3.yaml"},
 		},
+		{
+			name:       "Test kubebuilder markers",
+			id:         "test6",
+			perPackage: false,
+			genOpts:    "yaml=true,single_file=true,proto_oneof=true,int_native=true,multiline_description=true",
+			inputFiles: map[string][]string{
+				"test6": {"./testdata/test6/markers.proto"},
+			},
+			wantFiles: []string{"test6/openapiv3.yaml"},
+		},
 	}
 
 	for _, tc := range testcases {
