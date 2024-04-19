@@ -442,13 +442,13 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 			tmp := getSoloSchemaForMarkerType(schemaType)
 			schema := getSchemaIfRepeated(&tmp, repeated)
 			schema.Description = fieldDesc
-			g.mustApplyFieldRules(field, fieldRules, schema)
+			g.markerRegistry.MustApplyRulesToSchema(fieldRules, schema, markers.TargetField)
 			o.WithProperty(fieldName, schema)
 			continue
 		}
 
 		sr := g.fieldTypeRef(field)
-		g.mustApplyFieldRules(field, fieldRules, sr.Value)
+		g.markerRegistry.MustApplyRulesToSchema(fieldRules, sr.Value, markers.TargetField)
 		o.WithProperty(fieldName, sr.Value)
 	}
 
@@ -480,18 +480,6 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	}
 
 	return o
-}
-
-func (g *openapiGenerator) mustApplyFieldRules(
-	field *protomodel.FieldDescriptor,
-	rules []string,
-	schema *openapi3.Schema,
-) {
-	if *field.Type == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		g.markerRegistry.MustApplyRulesToSchema(rules, schema, markers.TargetType)
-		return
-	}
-	g.markerRegistry.MustApplyRulesToSchema(rules, schema, markers.TargetField)
 }
 
 func getSoloSchemaForMarkerType(t markers.Type) openapi3.Schema {
