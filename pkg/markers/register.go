@@ -66,7 +66,7 @@ func mustMakeAllWithPrefix(prefix string, target markers.TargetType, objs ...int
 		if err != nil {
 			panic(err)
 		}
-		defs[i] = &definitionWithHelp{Definition: def, Help: obj.(hasHelp).Help()}
+		defs[i] = &definitionWithHelp{Definition: def}
 	}
 
 	return defs
