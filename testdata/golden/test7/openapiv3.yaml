@@ -1,0 +1,44 @@
+components:
+  schemas:
+    test7.Msg:
+      description: This is a top-level message.
+      properties:
+        a:
+          format: int32
+          type: integer
+        blist:
+          items:
+            type: string
+          type: array
+        nested:
+          properties:
+            a:
+              type: string
+            b:
+              type: string
+            c:
+              type: string
+            d:
+              type: string
+            defaultValue:
+              type: string
+            embedded:
+              type: string
+            intOrString:
+              type: string
+            schemaless:
+              description: Schemaless field
+              type: string
+          type: object
+        object:
+          description: Should maintain valid Type marker.
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+        val:
+          x-kubernetes-preserve-unknown-fields: true
+      type: object
+info:
+  title: OpenAPI Spec for Solo APIs.
+  version: ""
+openapi: 3.0.1
+paths: null

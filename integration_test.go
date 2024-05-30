@@ -99,6 +99,16 @@ func TestOpenAPIGeneration(t *testing.T) {
 			},
 			wantFiles: []string{"test6/openapiv3.yaml"},
 		},
+		{
+			name:       "Test disable_validation option",
+			id:         "test7",
+			perPackage: false,
+			genOpts:    "yaml=true,single_file=true,proto_oneof=true,int_native=true,multiline_description=true,disable_validation=true",
+			inputFiles: map[string][]string{
+				"test7": {"./testdata/test7/validations.proto"},
+			},
+			wantFiles: []string{"test7/openapiv3.yaml"},
+		},
 	}
 
 	for _, tc := range testcases {
