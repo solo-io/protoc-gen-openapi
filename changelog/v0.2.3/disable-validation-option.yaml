@@ -1,0 +1,5 @@
+changelog:
+  - type: NEW_FEATURE
+    issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/17005
+    description: |
+      Adds support for disabling kubebuilder markers and validations to omit them from the generated OpenAPI schema.
