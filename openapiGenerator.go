@@ -119,7 +119,7 @@ type openapiGenerator struct {
 
 	// If set to true, kubebuilder markers and validations such as PreserveUnknownFields, Required, default, and all CEL rules will be omitted from the OpenAPI schema.
 	// The Type marker will be maintained.
-	disableValidation bool
+	disableKubeMarkers bool
 }
 
 type DescriptionConfiguration struct {
@@ -141,7 +141,7 @@ func newOpenAPIGenerator(
 	messagesWithEmptySchema []string,
 	protoOneof bool,
 	intNative bool,
-	disableValidation bool,
+	disableKubeMarkers bool,
 ) *openapiGenerator {
 	mRegistry, err := markers.NewRegistry()
 	if err != nil {
@@ -160,7 +160,7 @@ func newOpenAPIGenerator(
 		protoOneof:                 protoOneof,
 		intNative:                  intNative,
 		markerRegistry:             mRegistry,
-		disableValidation:          disableValidation,
+		disableKubeMarkers:         disableKubeMarkers,
 	}
 }
 
@@ -422,10 +422,8 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	}
 	o := openapi3.NewObjectSchema()
 	o.Description = g.generateDescription(message)
-	if !g.disableValidation {
-		msgRules := g.validationRules(message)
-		g.markerRegistry.MustApplyRulesToSchema(msgRules, o, markers.TargetType)
-	}
+	msgRules := g.validationRules(message)
+	g.markerRegistry.MustApplyRulesToSchema(msgRules, o, markers.TargetType)
 
 	oneOfFields := make(map[int32][]string)
 	var requiredFields []string
@@ -433,10 +431,7 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 		repeated := field.IsRepeated()
 		fieldName := g.fieldName(field)
 		fieldDesc := g.generateDescription(field)
-		fieldRules := []string{}
-		if !g.disableValidation {
-			fieldRules = g.validationRules(field)
-		}
+		fieldRules := g.validationRules(field)
 
 		// If the field is a oneof, we need to add the oneof property to the schema
 		if field.OneofIndex != nil {
@@ -648,6 +643,9 @@ func (g *openapiGenerator) generateMultiLineDescription(desc protomodel.CoreDesc
 }
 
 func (g *openapiGenerator) validationRules(desc protomodel.CoreDesc) []string {
+	if g.disableKubeMarkers {
+		return []string{}
+	}
 	_, validationRules := g.parseComments(desc)
 	return validationRules
 }
