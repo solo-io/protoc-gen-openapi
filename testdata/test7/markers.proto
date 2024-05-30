@@ -27,10 +27,13 @@ message Msg {
   // +kubebuilder:validation:Type=value
   google.protobuf.Value val = 4;
 
-  // Should maintain valid Type marker.
+  // Should maintain valid Type marker and not enumerate subfields.
   //
   // +kubebuilder:validation:Type=object
-  google.protobuf.Struct object = 5;
+  Nested2 object = 5;
+
+  // +kubebuilder:validation:Type=object
+  Recursive recursive = 6;
 
   // This is a nested message.
   //
@@ -67,6 +70,16 @@ message Msg {
     // +kubebuilder:validation:EmbeddedResource
     // +kubebuilder:validation:Nullable
     string embedded = 8;
+  }
+
+  message Nested2 {
+    string a = 1;
+    string b = 2;
+    int32 c = 3;
+  }
+
+  message Recursive {
+    Recursive r = 1;
   }
 }
 

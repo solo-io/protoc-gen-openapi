@@ -29,6 +29,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
+	kubemarkers "sigs.k8s.io/controller-tools/pkg/markers"
 
 	"github.com/solo-io/protoc-gen-openapi/pkg/markers"
 	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
@@ -423,7 +424,7 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 	o := openapi3.NewObjectSchema()
 	o.Description = g.generateDescription(message)
 	msgRules := g.validationRules(message)
-	g.markerRegistry.MustApplyRulesToSchema(msgRules, o, markers.TargetType)
+	g.mustApplyRulesToSchema(msgRules, o, markers.TargetType)
 
 	oneOfFields := make(map[int32][]string)
 	var requiredFields []string
@@ -448,13 +449,13 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 			tmp := getSoloSchemaForMarkerType(schemaType)
 			schema := getSchemaIfRepeated(&tmp, repeated)
 			schema.Description = fieldDesc
-			g.markerRegistry.MustApplyRulesToSchema(fieldRules, schema, markers.TargetField)
+			g.mustApplyRulesToSchema(fieldRules, schema, markers.TargetField)
 			o.WithProperty(fieldName, schema)
 			continue
 		}
 
 		sr := g.fieldTypeRef(field)
-		g.markerRegistry.MustApplyRulesToSchema(fieldRules, sr.Value, markers.TargetField)
+		g.mustApplyRulesToSchema(fieldRules, sr.Value, markers.TargetField)
 		o.WithProperty(fieldName, sr.Value)
 	}
 
@@ -642,10 +643,18 @@ func (g *openapiGenerator) generateMultiLineDescription(desc protomodel.CoreDesc
 	return comments
 }
 
-func (g *openapiGenerator) validationRules(desc protomodel.CoreDesc) []string {
+func (g *openapiGenerator) mustApplyRulesToSchema(
+	rules []string,
+	o *openapi3.Schema,
+	target kubemarkers.TargetType,
+) {
 	if g.disableKubeMarkers {
-		return nil
+		return
 	}
+	g.markerRegistry.MustApplyRulesToSchema(rules, o, target)
+}
+
+func (g *openapiGenerator) validationRules(desc protomodel.CoreDesc) []string {
 	_, validationRules := g.parseComments(desc)
 	return validationRules
 }

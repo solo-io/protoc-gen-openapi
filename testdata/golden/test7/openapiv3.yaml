@@ -29,9 +29,15 @@ components:
             schemaless:
               description: Schemaless field
               type: string
+          required:
+          - a
+          - b
           type: object
         object:
-          description: Should maintain valid Type marker.
+          description: Should maintain valid Type marker and not enumerate subfields.
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+        recursive:
           type: object
           x-kubernetes-preserve-unknown-fields: true
         val:
