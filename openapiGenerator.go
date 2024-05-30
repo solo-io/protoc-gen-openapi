@@ -644,7 +644,7 @@ func (g *openapiGenerator) generateMultiLineDescription(desc protomodel.CoreDesc
 
 func (g *openapiGenerator) validationRules(desc protomodel.CoreDesc) []string {
 	if g.disableKubeMarkers {
-		return []string{}
+		return nil
 	}
 	_, validationRules := g.parseComments(desc)
 	return validationRules
