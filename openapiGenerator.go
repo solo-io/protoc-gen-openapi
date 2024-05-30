@@ -116,6 +116,10 @@ type openapiGenerator struct {
 	intNative bool
 
 	markerRegistry *markers.Registry
+
+	// If set to true, kubebuilder markers and validations such as PreserveUnknownFields, Required, default, and all CEL rules will be omitted from the OpenAPI schema.
+	// The Type marker will be maintained.
+	disableKubeMarkers bool
 }
 
 type DescriptionConfiguration struct {
@@ -137,6 +141,7 @@ func newOpenAPIGenerator(
 	messagesWithEmptySchema []string,
 	protoOneof bool,
 	intNative bool,
+	disableKubeMarkers bool,
 ) *openapiGenerator {
 	mRegistry, err := markers.NewRegistry()
 	if err != nil {
@@ -155,6 +160,7 @@ func newOpenAPIGenerator(
 		protoOneof:                 protoOneof,
 		intNative:                  intNative,
 		markerRegistry:             mRegistry,
+		disableKubeMarkers:         disableKubeMarkers,
 	}
 }
 
@@ -637,6 +643,9 @@ func (g *openapiGenerator) generateMultiLineDescription(desc protomodel.CoreDesc
 }
 
 func (g *openapiGenerator) validationRules(desc protomodel.CoreDesc) []string {
+	if g.disableKubeMarkers {
+		return nil
+	}
 	_, validationRules := g.parseComments(desc)
 	return validationRules
 }

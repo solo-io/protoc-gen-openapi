@@ -53,6 +53,7 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 	enumAsIntOrString := false
 	protoOneof := false
 	intNative := false
+	disableKubeMarkers := false
 
 	var messagesWithEmptySchema []string
 
@@ -137,6 +138,15 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 			}
 		} else if k == "additional_empty_schema" {
 			messagesWithEmptySchema = strings.Split(v, "+")
+		} else if k == "disable_kube_markers" {
+			switch strings.ToLower(v) {
+			case "true":
+				disableKubeMarkers = true
+			case "false":
+				disableKubeMarkers = false
+			default:
+				return nil, fmt.Errorf("unknown value '%s' for disable_kube_markers", v)
+			}
 		} else {
 			return nil, fmt.Errorf("unknown argument '%s' specified", k)
 		}
@@ -173,6 +183,7 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 		messagesWithEmptySchema,
 		protoOneof,
 		intNative,
+		disableKubeMarkers,
 	)
 	return g.generateOutput(filesToGen)
 }
