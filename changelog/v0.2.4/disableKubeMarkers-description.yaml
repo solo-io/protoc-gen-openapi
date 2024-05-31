@@ -1,0 +1,6 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/17005
+    resolvesIssue: false
+    description: |
+      Fixes the description of the disable_kube_markers option to correctly state which markers are respected and which are disabled.
