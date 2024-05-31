@@ -118,8 +118,8 @@ type openapiGenerator struct {
 
 	markerRegistry *markers.Registry
 
-	// If set to true, kubebuilder markers and validations such as PreserveUnknownFields, Required, default, and all CEL rules will be omitted from the OpenAPI schema.
-	// The Type marker will be maintained.
+	// If set to true, kubebuilder markers and validations such as PreserveUnknownFields, MinItems, default, and all CEL rules will be omitted from the OpenAPI schema.
+	// The Type and Required markers will be maintained.
 	disableKubeMarkers bool
 }
 
