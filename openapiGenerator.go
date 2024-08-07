@@ -121,6 +121,8 @@ type openapiGenerator struct {
 	// If set to true, kubebuilder markers and validations such as PreserveUnknownFields, MinItems, default, and all CEL rules will be omitted from the OpenAPI schema.
 	// The Type and Required markers will be maintained.
 	disableKubeMarkers bool
+
+	ignoredKubeMarkers []string
 }
 
 type DescriptionConfiguration struct {
@@ -143,8 +145,9 @@ func newOpenAPIGenerator(
 	protoOneof bool,
 	intNative bool,
 	disableKubeMarkers bool,
+	ignoredKubeMarkers []string,
 ) *openapiGenerator {
-	mRegistry, err := markers.NewRegistry()
+	mRegistry, err := markers.NewRegistry(ignoredKubeMarkers)
 	if err != nil {
 		log.Panicf("error initializing marker registry: %v", err)
 	}

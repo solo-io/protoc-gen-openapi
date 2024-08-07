@@ -4,6 +4,9 @@ import (
 	"reflect"
 
 	"sigs.k8s.io/controller-tools/pkg/markers"
+	"regexp"
+	"fmt"
+	"strings"
 )
 
 const (
@@ -17,13 +20,20 @@ type definitionWithHelp struct {
 }
 
 type Registry struct {
-	mRegistry *markers.Registry
+	mRegistry               *markers.Registry
+	ignoredKubeMarkersRegex *regexp.Regexp
 }
 
-func NewRegistry() (*Registry, error) {
+func NewRegistry(ignoredKubeMarkers []string) (*Registry, error) {
+	var ignoredKubeMarkersRegexp *regexp.Regexp
+	if len(ignoredKubeMarkers) > 0 {
+		toIgnore := strings.Join(ignoredKubeMarkers, "|")
+		ignoredKubeMarkersRegexp = regexp.MustCompile(fmt.Sprintf("(?:%s)", toIgnore))
+	}
 	mReg := &markers.Registry{}
 	r := &Registry{
-		mRegistry: mReg,
+		mRegistry:               mReg,
+		ignoredKubeMarkersRegex: ignoredKubeMarkersRegexp,
 	}
 	return r, Register(mReg)
 }
