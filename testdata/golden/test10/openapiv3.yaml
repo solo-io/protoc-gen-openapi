@@ -1,6 +1,6 @@
 components:
   schemas:
-    test8.Msg:
+    test10.Msg:
       description: This is a top-level message.
       properties:
         a:
@@ -43,7 +43,6 @@ components:
               type: string
             defaultValue:
               default: forty-two
-              example: forty-two
               type: string
             embedded:
               nullable: true
@@ -54,9 +53,6 @@ components:
               x-kubernetes-int-or-string: true
             schemaless:
               description: Schemaless field
-          required:
-          - a
-          - b
           type: object
           x-kubernetes-preserve-unknown-fields: true
         object:

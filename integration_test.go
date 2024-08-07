@@ -114,23 +114,33 @@ func TestOpenAPIGeneration(t *testing.T) {
 		},
 		{
 			name:       "Test no markers are ignored when ignored_kube_markers is zero length",
-			id:         "test7",
-			perPackage: false,
-			genOpts:    "yaml=true,single_file=true,proto_oneof=true,int_native=true,multiline_description=true,disable_kube_markers=true,ignored_kube_markers=",
-			inputFiles: map[string][]string{
-				"test7": {"./testdata/test7/markers.proto"},
-			},
-			wantFiles: []string{"test7/openapiv3.yaml"},
-		},
-		{
-			name:       "Test ignored_kube_markers option ignores specific markers",
 			id:         "test8",
 			perPackage: false,
-			genOpts:    "yaml=true,single_file=true,proto_oneof=true,int_native=true,multiline_description=true,disable_kube_markers=true,ignored_kube_markers=Required",
+			genOpts:    "yaml=true,single_file=true,proto_oneof=true,int_native=true,multiline_description=true,disable_kube_markers=false,ignored_kube_markers=",
 			inputFiles: map[string][]string{
 				"test8": {"./testdata/test8/markers.proto"},
 			},
 			wantFiles: []string{"test8/openapiv3.yaml"},
+		},
+		{
+			name:       "Test ignored_kube_markers option ignores a single marker",
+			id:         "test9",
+			perPackage: false,
+			genOpts:    "yaml=true,single_file=true,proto_oneof=true,int_native=true,multiline_description=true,disable_kube_markers=false,ignored_kube_markers=Required",
+			inputFiles: map[string][]string{
+				"test9": {"./testdata/test9/markers.proto"},
+			},
+			wantFiles: []string{"test9/openapiv3.yaml"},
+		},
+		{
+			name:       "Test ignored_kube_markers option ignores multiple markers",
+			id:         "test10",
+			perPackage: false,
+			genOpts:    "yaml=true,single_file=true,proto_oneof=true,int_native=true,multiline_description=true,disable_kube_markers=false,ignored_kube_markers=Required+example",
+			inputFiles: map[string][]string{
+				"test10": {"./testdata/test10/markers.proto"},
+			},
+			wantFiles: []string{"test10/openapiv3.yaml"},
 		},
 	}
 

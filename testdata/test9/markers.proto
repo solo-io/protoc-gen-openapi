@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package test8;
+package test9;
 
 import "struct.proto";
 

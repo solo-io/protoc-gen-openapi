@@ -695,12 +695,11 @@ func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments str
 				continue
 			}
 
-			// If this is an ignored kube marker, we'll skip this line, preventing validation and rendering marker in output
-			if strings.HasPrefix(l, markers.Kubebuilder) && isIgnoredKubeMarker(ignoredKubeMarkersRegexp, l) {
-				continue
-			}
-
 			if strings.HasPrefix(l, markers.Kubebuilder) {
+				if isIgnoredKubeMarker(ignoredKubeMarkersRegexp, l) {
+					continue
+				}
+
 				validationRules = append(validationRules, l)
 				continue
 			}
