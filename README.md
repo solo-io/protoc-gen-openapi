@@ -77,4 +77,5 @@ Other supported options are:
 *  `disable_kube_markers`
     *   when set to `true`, kubebuilder markers and validations such as PreserveUnknownFields, MinItems, default, and all CEL rules will be omitted from the OpenAPI schema. The Type and Required markers will be maintained.
 *  `ignored_kube_markers`
-    *   when set, ignores the contained kubebuilder markers and validations, and prevents them from being applied to the OpenAPI schema. These values will be assembled into a regex that will perform a substring match on rules.
+    *   when set, this list of substrings will be used to identify kubebuilder markers to ignore. When multiple are 
+        supplied, this will function as a logical OR i.e. any rule which contains a provided substring will be ignored

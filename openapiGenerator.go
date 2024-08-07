@@ -123,10 +123,9 @@ type openapiGenerator struct {
 	// The Type and Required markers will be maintained.
 	disableKubeMarkers bool
 
-	// If provided, ignores the contained kubebuilder markers and validations, and prevents them from being applied to the OpenAPI schema.
-	// If none are provided, no markers will be ignored.
-	// These values will be assembled into a regex that performs a logical OR substring match
-	ignoredKubeMarkers []string
+	// when set, this list of substrings will be used to identify kubebuilder markers to ignore. When multiple are
+	// supplied, this will function as a logical OR i.e. any rule which contains a provided substring will be ignored
+	ignoredKubeMarkerSubstrings []string
 }
 
 type DescriptionConfiguration struct {
@@ -156,19 +155,19 @@ func newOpenAPIGenerator(
 		log.Panicf("error initializing marker registry: %v", err)
 	}
 	return &openapiGenerator{
-		model:                      model,
-		perFile:                    perFile,
-		singleFile:                 singleFile,
-		yaml:                       yaml,
-		useRef:                     useRef,
-		descriptionConfiguration:   descriptionConfiguration,
-		enumAsIntOrString:          enumAsIntOrString,
-		customSchemasByMessageName: buildCustomSchemasByMessageName(messagesWithEmptySchema),
-		protoOneof:                 protoOneof,
-		intNative:                  intNative,
-		markerRegistry:             mRegistry,
-		disableKubeMarkers:         disableKubeMarkers,
-		ignoredKubeMarkers:         ignoredKubeMarkers,
+		model:                       model,
+		perFile:                     perFile,
+		singleFile:                  singleFile,
+		yaml:                        yaml,
+		useRef:                      useRef,
+		descriptionConfiguration:    descriptionConfiguration,
+		enumAsIntOrString:           enumAsIntOrString,
+		customSchemasByMessageName:  buildCustomSchemasByMessageName(messagesWithEmptySchema),
+		protoOneof:                  protoOneof,
+		intNative:                   intNative,
+		markerRegistry:              mRegistry,
+		disableKubeMarkers:          disableKubeMarkers,
+		ignoredKubeMarkerSubstrings: ignoredKubeMarkers,
 	}
 }
 
@@ -671,9 +670,9 @@ func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments str
 	blocks := strings.Split(c, "\n\n")
 
 	var ignoredKubeMarkersRegexp *regexp.Regexp
-	if len(g.ignoredKubeMarkers) > 0 {
+	if len(g.ignoredKubeMarkerSubstrings) > 0 {
 		ignoredKubeMarkersRegexp = regexp.MustCompile(
-			fmt.Sprintf("(?:%s)", strings.Join(g.ignoredKubeMarkers, "|")),
+			fmt.Sprintf("(?:%s)", strings.Join(g.ignoredKubeMarkerSubstrings, "|")),
 		)
 	}
 
