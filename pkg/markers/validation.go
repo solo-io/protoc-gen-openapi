@@ -141,12 +141,7 @@ func (r *Registry) ApplyRulesToSchema(
 	o *openapi3.Schema,
 	target markers.TargetType,
 ) error {
-
 	for _, rule := range rules {
-		if r.isIgnoredKubeMarker(rule) {
-			continue
-		}
-
 		defn := r.mRegistry.Lookup(rule, target)
 		if defn == nil {
 			return fmt.Errorf("no definition found for rule: %s", rule)
@@ -169,10 +164,6 @@ func (r *Registry) GetSchemaType(
 	target markers.TargetType,
 ) Type {
 	for _, rule := range rules {
-		if r.isIgnoredKubeMarker(rule) {
-			continue
-		}
-
 		defn := r.mRegistry.Lookup(rule, target)
 		if defn == nil {
 			log.Panicf("no definition found for rule: %s", rule)
@@ -192,10 +183,6 @@ func (r *Registry) IsRequired(
 	rules []string,
 ) bool {
 	for _, rule := range rules {
-		if r.isIgnoredKubeMarker(rule) {
-			continue
-		}
-
 		defn := r.mRegistry.Lookup(rule, markers.DescribesField)
 		if defn == nil {
 			log.Panicf("no definition found for rule: %s", rule)
@@ -204,14 +191,5 @@ func (r *Registry) IsRequired(
 			return true
 		}
 	}
-
 	return false
-}
-
-func (r *Registry) isIgnoredKubeMarker(rule string) bool {
-	if r.ignoredKubeMarkersRegex == nil {
-		return false
-	}
-
-	return r.ignoredKubeMarkersRegex.MatchString(rule)
 }

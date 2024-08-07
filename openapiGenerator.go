@@ -33,6 +33,7 @@ import (
 
 	"github.com/solo-io/protoc-gen-openapi/pkg/markers"
 	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
+	"regexp"
 )
 
 var descriptionExclusionMarkers = []string{"$hide_from_docs", "$hide", "@exclude"}
@@ -153,7 +154,6 @@ func newOpenAPIGenerator(
 	if err != nil {
 		log.Panicf("error initializing marker registry: %v", err)
 	}
-
 	return &openapiGenerator{
 		model:                      model,
 		perFile:                    perFile,
@@ -668,6 +668,9 @@ func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments str
 	c := strings.TrimSpace(desc.Location().GetLeadingComments())
 	blocks := strings.Split(c, "\n\n")
 
+	toIgnore := strings.Join(g.ignoredKubeMarkers, "|")
+	ignoredKubeMarkersRegexp := regexp.MustCompile(fmt.Sprintf("(?:%s)", toIgnore))
+
 	var sb strings.Builder
 	for i, block := range blocks {
 		if shouldNotRenderDesc(strings.TrimSpace(block)) {
@@ -686,7 +689,8 @@ func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments str
 			if shouldNotRenderDesc(l) {
 				continue
 			}
-			if strings.HasPrefix(l, markers.Kubebuilder) {
+			// If this is a kube builder marker and not an ignored marker, add it to the list of validation rules
+			if strings.HasPrefix(l, markers.Kubebuilder) && !ignoredKubeMarkersRegexp.MatchString(l) {
 				validationRules = append(validationRules, l)
 				continue
 			}
