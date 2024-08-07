@@ -150,7 +150,7 @@ func newOpenAPIGenerator(
 	disableKubeMarkers bool,
 	ignoredKubeMarkers []string,
 ) *openapiGenerator {
-	mRegistry, err := markers.NewRegistry(ignoredKubeMarkers)
+	mRegistry, err := markers.NewRegistry()
 	if err != nil {
 		log.Panicf("error initializing marker registry: %v", err)
 	}
@@ -167,6 +167,7 @@ func newOpenAPIGenerator(
 		intNative:                  intNative,
 		markerRegistry:             mRegistry,
 		disableKubeMarkers:         disableKubeMarkers,
+		ignoredKubeMarkers:         ignoredKubeMarkers,
 	}
 }
 
@@ -668,8 +669,12 @@ func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments str
 	c := strings.TrimSpace(desc.Location().GetLeadingComments())
 	blocks := strings.Split(c, "\n\n")
 
-	toIgnore := strings.Join(g.ignoredKubeMarkers, "|")
-	ignoredKubeMarkersRegexp := regexp.MustCompile(fmt.Sprintf("(?:%s)", toIgnore))
+	var ignoredKubeMarkersRegexp *regexp.Regexp
+	if len(g.ignoredKubeMarkers) > 0 {
+		ignoredKubeMarkersRegexp = regexp.MustCompile(
+			fmt.Sprintf("(?:%s)", strings.Join(g.ignoredKubeMarkers, "|")),
+		)
+	}
 
 	var sb strings.Builder
 	for i, block := range blocks {
@@ -689,8 +694,13 @@ func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments str
 			if shouldNotRenderDesc(l) {
 				continue
 			}
-			// If this is a kube builder marker and not an ignored marker, add it to the list of validation rules
-			if strings.HasPrefix(l, markers.Kubebuilder) && !ignoredKubeMarkersRegexp.MatchString(l) {
+
+			// If this is an ignored kube marker, we'll skip this line, preventing validation and rendering marker in output
+			if strings.HasPrefix(l, markers.Kubebuilder) && isIgnoredKubeMarker(ignoredKubeMarkersRegexp, l) {
+				continue
+			}
+
+			if strings.HasPrefix(l, markers.Kubebuilder) {
 				validationRules = append(validationRules, l)
 				continue
 			}
@@ -821,4 +831,12 @@ func (g *openapiGenerator) relativeName(desc protomodel.CoreDesc) string {
 	}
 
 	return desc.PackageDesc().Name + "." + typeName
+}
+
+func isIgnoredKubeMarker(regexp *regexp.Regexp, l string) bool {
+	if regexp == nil {
+		return false
+	}
+
+	return regexp.MatchString(l)
 }
