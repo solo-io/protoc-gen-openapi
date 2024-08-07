@@ -21,14 +21,11 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"regexp"
 )
 
 const goldenDir = "testdata/golden/"
 
 func TestOpenAPIGeneration(t *testing.T) {
-	regexp.MustCompile("(:?kubebuilder:altName)")
-
 	testcases := []struct {
 		name       string
 		id         string
