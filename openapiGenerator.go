@@ -412,7 +412,7 @@ func (g *openapiGenerator) generateSoloMessageSchema(message *protomodel.Message
 }
 
 func (g *openapiGenerator) generateSoloInt64Schema() *openapi3.Schema {
-	schema := openapi3.NewInt64Schema()
+	schema := openapi3.NewStringSchema()
 	schema.ExtensionProps = openapi3.ExtensionProps{
 		Extensions: map[string]interface{}{
 			"x-kubernetes-int-or-string": true,
