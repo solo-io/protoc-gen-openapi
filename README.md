@@ -76,3 +76,5 @@ Other supported options are:
     *   when set to `true`, the native openapi schemas will be used for Integer types instead of Solo wrappers that add Kubernetes extension headers to the schema to treat int as strings.
 *  `disable_kube_markers`
     *   when set to `true`, kubebuilder markers and validations such as PreserveUnknownFields, MinItems, default, and all CEL rules will be omitted from the OpenAPI schema. The Type and Required markers will be maintained.
+*  `ignored_kube_markers`
+    *   when set, ignores the contained kubebuilder markers and validations, and prevents them from being applied to the OpenAPI schema. 

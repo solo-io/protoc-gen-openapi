@@ -1,0 +1,7 @@
+changelog:
+  - type: NEW_FEATURE
+    issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/18119
+    resolvesIssue: false
+    description: |
+      Allows the user to define one or more kube markers to ignore. This is useful when using protos that contain
+      unsupported kubebuilder decorators.

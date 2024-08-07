@@ -122,6 +122,7 @@ type openapiGenerator struct {
 	// The Type and Required markers will be maintained.
 	disableKubeMarkers bool
 
+	// If provided, ignores the contained kubebuilder markers and validations, and prevents them from being applied to the OpenAPI schema.
 	ignoredKubeMarkers []string
 }
 
