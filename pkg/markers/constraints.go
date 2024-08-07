@@ -311,6 +311,10 @@ func (m Example) ApplyToSchema(o *openapi3.Schema) {
 	o.Example = m.Value
 }
 
+type AltName string
+
+func (a AltName) ApplyToSchema(o *openapi3.Schema) {}
+
 // Schemaless marks a field as being a schemaless object.
 //
 // Schemaless objects are not introspected, so you must provide
