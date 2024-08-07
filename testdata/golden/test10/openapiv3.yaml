@@ -1,0 +1,73 @@
+components:
+  schemas:
+    test10.Msg:
+      description: This is a top-level message.
+      properties:
+        a:
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          format: int32
+          maximum: 100
+          minimum: 5
+          multipleOf: 2
+          type: integer
+          x-kubernetes-validations:
+          - message: must not equal 27
+            rule: self != 27
+        blist:
+          items:
+            type: string
+          maxItems: 5
+          minItems: 1
+          type: array
+          uniqueItems: true
+        nested:
+          maxProperties: 2
+          minProperties: 1
+          properties:
+            a:
+              pattern: ^[a-zA-Z0-9_]*$
+              type: string
+            b:
+              enum:
+              - Allow
+              - Forbid
+              - Replace
+              type: string
+            c:
+              maxLength: 100
+              minLength: 1
+              type: string
+            d:
+              format: date-time
+              type: string
+            defaultValue:
+              default: forty-two
+              type: string
+            embedded:
+              nullable: true
+              type: string
+              x-kubernetes-embedded-resource: true
+            intOrString:
+              type: string
+              x-kubernetes-int-or-string: true
+            schemaless:
+              description: Schemaless field
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+        object:
+          description: Should maintain valid Type marker and not enumerate subfields.
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+        recursive:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+        val:
+          x-kubernetes-preserve-unknown-fields: true
+      type: object
+      x-kubernetes-preserve-unknown-fields: true
+info:
+  title: OpenAPI Spec for Solo APIs.
+  version: ""
+openapi: 3.0.1
+paths: null

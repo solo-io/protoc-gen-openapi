@@ -33,6 +33,7 @@ import (
 
 	"github.com/solo-io/protoc-gen-openapi/pkg/markers"
 	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
+	"regexp"
 )
 
 var descriptionExclusionMarkers = []string{"$hide_from_docs", "$hide", "@exclude"}
@@ -121,6 +122,10 @@ type openapiGenerator struct {
 	// If set to true, kubebuilder markers and validations such as PreserveUnknownFields, MinItems, default, and all CEL rules will be omitted from the OpenAPI schema.
 	// The Type and Required markers will be maintained.
 	disableKubeMarkers bool
+
+	// when set, this list of substrings will be used to identify kubebuilder markers to ignore. When multiple are
+	// supplied, this will function as a logical OR i.e. any rule which contains a provided substring will be ignored
+	ignoredKubeMarkerSubstrings []string
 }
 
 type DescriptionConfiguration struct {
@@ -143,25 +148,26 @@ func newOpenAPIGenerator(
 	protoOneof bool,
 	intNative bool,
 	disableKubeMarkers bool,
+	ignoredKubeMarkers []string,
 ) *openapiGenerator {
 	mRegistry, err := markers.NewRegistry()
 	if err != nil {
 		log.Panicf("error initializing marker registry: %v", err)
 	}
-
 	return &openapiGenerator{
-		model:                      model,
-		perFile:                    perFile,
-		singleFile:                 singleFile,
-		yaml:                       yaml,
-		useRef:                     useRef,
-		descriptionConfiguration:   descriptionConfiguration,
-		enumAsIntOrString:          enumAsIntOrString,
-		customSchemasByMessageName: buildCustomSchemasByMessageName(messagesWithEmptySchema),
-		protoOneof:                 protoOneof,
-		intNative:                  intNative,
-		markerRegistry:             mRegistry,
-		disableKubeMarkers:         disableKubeMarkers,
+		model:                       model,
+		perFile:                     perFile,
+		singleFile:                  singleFile,
+		yaml:                        yaml,
+		useRef:                      useRef,
+		descriptionConfiguration:    descriptionConfiguration,
+		enumAsIntOrString:           enumAsIntOrString,
+		customSchemasByMessageName:  buildCustomSchemasByMessageName(messagesWithEmptySchema),
+		protoOneof:                  protoOneof,
+		intNative:                   intNative,
+		markerRegistry:              mRegistry,
+		disableKubeMarkers:          disableKubeMarkers,
+		ignoredKubeMarkerSubstrings: ignoredKubeMarkers,
 	}
 }
 
@@ -663,6 +669,13 @@ func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments str
 	c := strings.TrimSpace(desc.Location().GetLeadingComments())
 	blocks := strings.Split(c, "\n\n")
 
+	var ignoredKubeMarkersRegexp *regexp.Regexp
+	if len(g.ignoredKubeMarkerSubstrings) > 0 {
+		ignoredKubeMarkersRegexp = regexp.MustCompile(
+			fmt.Sprintf("(?:%s)", strings.Join(g.ignoredKubeMarkerSubstrings, "|")),
+		)
+	}
+
 	var sb strings.Builder
 	for i, block := range blocks {
 		if shouldNotRenderDesc(strings.TrimSpace(block)) {
@@ -681,7 +694,12 @@ func (g *openapiGenerator) parseComments(desc protomodel.CoreDesc) (comments str
 			if shouldNotRenderDesc(l) {
 				continue
 			}
+
 			if strings.HasPrefix(l, markers.Kubebuilder) {
+				if isIgnoredKubeMarker(ignoredKubeMarkersRegexp, l) {
+					continue
+				}
+
 				validationRules = append(validationRules, l)
 				continue
 			}
@@ -812,4 +830,12 @@ func (g *openapiGenerator) relativeName(desc protomodel.CoreDesc) string {
 	}
 
 	return desc.PackageDesc().Name + "." + typeName
+}
+
+func isIgnoredKubeMarker(regexp *regexp.Regexp, l string) bool {
+	if regexp == nil {
+		return false
+	}
+
+	return regexp.MatchString(l)
 }

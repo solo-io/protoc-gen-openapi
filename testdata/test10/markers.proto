@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package test10;
+
+import "struct.proto";
+
+// This is a top-level message.
+//
+// +kubebuilder:pruning:PreserveUnknownFields
+message Msg {
+  // +kubebuilder:pruning:PreserveUnknownFields
+  Nested nested = 1;
+
+  // +kubebuilder:validation:Maximum=100
+  // +kubebuilder:validation:Minimum=5
+  // +kubebuilder:validation:ExclusiveMaximum=true
+  // +kubebuilder:validation:ExclusiveMinimum=true
+  // +kubebuilder:validation:MultipleOf=2
+  // +kubebuilder:validation:XValidation:rule="self != 27",message="must not equal 27"
+  int32 a = 2;
+
+  // +kubebuilder:validation:MinItems=1
+  // +kubebuilder:validation:MaxItems=5
+  // +kubebuilder:validation:UniqueItems=true
+  repeated string blist = 3;
+
+  // +kubebuilder:validation:Type=value
+  google.protobuf.Value val = 4;
+
+  // Should maintain valid Type marker and not enumerate subfields.
+  //
+  // +kubebuilder:validation:Type=object
+  Nested2 object = 5;
+
+  // +kubebuilder:validation:Type=object
+  Recursive recursive = 6;
+
+  // This is a nested message.
+  //
+  // +kubebuilder:validation:MinProperties=1
+  // +kubebuilder:validation:MaxProperties=2
+  message Nested {
+    // +kubebuilder:validation:Pattern="^[a-zA-Z0-9_]*$"
+    // +kubebuilder:validation:Required
+    string a = 1;
+
+    // +kubebuilder:validation:Enum=Allow;Forbid;Replace
+    // +kubebuilder:validation:Required
+    string b = 2;
+
+    // +kubebuilder:validation:MaxLength=100
+    // +kubebuilder:validation:MinLength=1
+    string c = 3;
+
+    // +kubebuilder:validation:Format=date-time
+    string d = 4;
+
+    // +kubebuilder:validation:XIntOrString
+    string int_or_string = 5;
+
+    // +kubebuilder:default=forty-two
+	  // +kubebuilder:example=forty-two
+    string default_value = 6;
+
+    // Schemaless field
+    //
+    // +kubebuilder:validation:Schemaless
+    string schemaless = 7;
+
+    // +kubebuilder:validation:EmbeddedResource
+    // +kubebuilder:validation:Nullable
+    string embedded = 8;
+  }
+
+  message Nested2 {
+    string a = 1;
+    string b = 2;
+    int32 c = 3;
+  }
+
+  message Recursive {
+    Recursive r = 1;
+  }
+}
+

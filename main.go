@@ -56,6 +56,7 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 	disableKubeMarkers := false
 
 	var messagesWithEmptySchema []string
+	var ignoredKubeMarkerSubstrings []string
 
 	p := extractParams(request.GetParameter())
 	for k, v := range p {
@@ -147,6 +148,10 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 			default:
 				return nil, fmt.Errorf("unknown value '%s' for disable_kube_markers", v)
 			}
+		} else if k == "ignored_kube_marker_substrings" {
+			if len(v) > 0 {
+				ignoredKubeMarkerSubstrings = strings.Split(v, "+")
+			}
 		} else {
 			return nil, fmt.Errorf("unknown argument '%s' specified", k)
 		}
@@ -184,6 +189,7 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 		protoOneof,
 		intNative,
 		disableKubeMarkers,
+		ignoredKubeMarkerSubstrings,
 	)
 	return g.generateOutput(filesToGen)
 }
