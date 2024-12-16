@@ -142,21 +142,69 @@ func (r *Registry) ApplyRulesToSchema(
 	target markers.TargetType,
 ) error {
 	for _, rule := range rules {
-		defn := r.mRegistry.Lookup(rule, target)
-		if defn == nil {
-			return fmt.Errorf("no definition found for rule: %s", rule)
+		var (
+			transformedRule string
+			targetSchema    *openapi3.Schema
+			err             error
+		)
+
+		if isItemRule(rule) {
+			transformedRule, targetSchema, err = r.transformItemRule(rule, o)
+		} else {
+			// Regular (non-items) rule
+			transformedRule = rule
+			targetSchema = o
 		}
-		val, err := defn.Parse(rule)
+
+		if err != nil {
+			return err
+		}
+
+		defn := r.mRegistry.Lookup(transformedRule, target)
+		if defn == nil {
+			return fmt.Errorf("no definition found for rule: %s", transformedRule)
+		}
+
+		val, err := defn.Parse(transformedRule)
 		if err != nil {
 			return fmt.Errorf("error parsing rule: %s", err)
 		}
+
 		if s, ok := val.(SchemaMarker); ok {
-			s.ApplyToSchema(o)
+			s.ApplyToSchema(targetSchema)
 		} else {
-			return fmt.Errorf("expected SchemaMarker, got %T", val)
+			return fmt.Errorf("expected SchemaMarker, got %T for rule %s", val, transformedRule)
 		}
 	}
+
 	return nil
+}
+
+// isItemRule checks if the given rule applies to items.
+func isItemRule(rule string) bool {
+	return strings.Contains(rule, ":items:")
+}
+
+// transformItemRule transforms an item rule into a standard-looking rule
+// and returns the appropriate target schema (the items schema).
+func (r *Registry) transformItemRule(rule string, o *openapi3.Schema) (string, *openapi3.Schema, error) {
+	parts := strings.SplitN(rule, ":items:", 2)
+	if len(parts) != 2 {
+		return "", nil, fmt.Errorf("invalid item rule format: %s", rule)
+	}
+
+	// Transform the item rule into a standard rule
+	// e.g. "+kubebuilder:validation:items:MaxLength=255" -> "+kubebuilder:validation:MaxLength=255"
+	transformedRule := parts[0] + ":" + parts[1]
+
+	if o.Type != "array" {
+		return "", nil, fmt.Errorf("items validation rule applied to non-array type: %s", o.Type)
+	}
+	if o.Items == nil {
+		o.Items = openapi3.NewSchemaRef("", &openapi3.Schema{})
+	}
+
+	return transformedRule, o.Items.Value, nil
 }
 
 func (r *Registry) GetSchemaType(
