@@ -188,15 +188,10 @@ func isItemRule(rule string) bool {
 // transformItemRule transforms an item rule into a standard-looking rule
 // and returns the appropriate target schema (the items schema).
 func (r *Registry) transformItemRule(rule string, o *openapi3.Schema) (string, *openapi3.Schema, error) {
-	parts := strings.SplitN(rule, ":items:", 2)
-	if len(parts) != 2 {
-		return "", nil, fmt.Errorf("invalid item rule format: %s", rule)
+	transformedRule, err := r.transformItemRuleToStandard(rule)
+	if err != nil {
+		return "", nil, err
 	}
-
-	// Transform the item rule into a standard rule
-	// e.g. "+kubebuilder:validation:items:MaxLength=255" -> "+kubebuilder:validation:MaxLength=255"
-	transformedRule := parts[0] + ":" + parts[1]
-
 	if o.Type != "array" {
 		return "", nil, fmt.Errorf("items validation rule applied to non-array type: %s", o.Type)
 	}
@@ -207,11 +202,29 @@ func (r *Registry) transformItemRule(rule string, o *openapi3.Schema) (string, *
 	return transformedRule, o.Items.Value, nil
 }
 
+func (r *Registry) transformItemRuleToStandard(rule string) (string, error) {
+	parts := strings.SplitN(rule, ":items:", 2)
+	if len(parts) != 2 {
+		return "", fmt.Errorf("invalid item rule format: %s", rule)
+	}
+
+	// Transform the item rule into a standard rule
+	// e.g. "+kubebuilder:validation:items:MaxLength=255" -> "+kubebuilder:validation:MaxLength=255"
+	return parts[0] + ":" + parts[1], nil
+}
+
 func (r *Registry) GetSchemaType(
 	rules []string,
 	target markers.TargetType,
 ) Type {
 	for _, rule := range rules {
+		if isItemRule(rule) {
+			transFormedRule, err := r.transformItemRuleToStandard(rule)
+			if err != nil {
+				log.Panicf("error parsing :items: rule: %s", err)
+			}
+			rule = transFormedRule
+		}
 		defn := r.mRegistry.Lookup(rule, target)
 		if defn == nil {
 			log.Panicf("no definition found for rule: %s", rule)
@@ -231,6 +244,13 @@ func (r *Registry) IsRequired(
 	rules []string,
 ) bool {
 	for _, rule := range rules {
+		if isItemRule(rule) {
+			transFormedRule, err := r.transformItemRuleToStandard(rule)
+			if err != nil {
+				log.Panicf("error parsing :items: rule: %s", err)
+			}
+			rule = transFormedRule
+		}
 		defn := r.mRegistry.Lookup(rule, markers.DescribesField)
 		if defn == nil {
 			log.Panicf("no definition found for rule: %s", rule)
