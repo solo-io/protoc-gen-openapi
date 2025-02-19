@@ -1,0 +1,6 @@
+changelog:
+  - type: BREAKING_CHANGE
+    description: >
+      Bump dependencies to support Go 1.24
+    issueLink: https://github.com/solo-io/solo-projects/issues/7609
+    resolvesIssue: false
