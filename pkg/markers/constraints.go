@@ -186,7 +186,7 @@ func (m Type) ApplyToSchema(o *openapi3.Schema) {
 		return
 	}
 	// object and value types are special cased in the generator
-	if o.Type != nil && (o.Type.Is(openapi3.TypeObject) || !o.Type.Is("value")) {
+	if o.Type != nil && (o.Type.Is(openapi3.TypeObject) || !o.Type.Is(TypeValue)) {
 		return
 	}
 	o.Type = &openapi3.Types{string(m)}
