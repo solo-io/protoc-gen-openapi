@@ -66,7 +66,7 @@ func (m MultipleOf) ApplyToSchema(o *openapi3.Schema) {
 	if !hasNumericType(o) {
 		log.Panicf("must apply MultipleOf to a numeric type, got %s", o.Type)
 	}
-	if o.Type == "integer" && !isIntegral(m.Value()) {
+	if o.Type.Is(openapi3.TypeInteger) && !isIntegral(m.Value()) {
 		log.Panicf("cannot apply non-integral MultipleOf validation (%v) to integer value", m.Value())
 	}
 	val := m.Value()
@@ -77,7 +77,7 @@ func (m MultipleOf) ApplyToSchema(o *openapi3.Schema) {
 type MaxProperties int
 
 func (m MaxProperties) ApplyToSchema(o *openapi3.Schema) {
-	if o.Type != "object" {
+	if !o.Type.Is(openapi3.TypeObject) {
 		log.Panicf("must apply MaxProperties to an object, got %s", o.Type)
 	}
 	o.WithMaxProperties(int64(m))
@@ -87,7 +87,7 @@ func (m MaxProperties) ApplyToSchema(o *openapi3.Schema) {
 type MinProperties int
 
 func (m MinProperties) ApplyToSchema(o *openapi3.Schema) {
-	if o.Type != "object" {
+	if !o.Type.Is(openapi3.TypeObject) {
 		log.Panicf("must apply MinProperties to an object, got %s", o.Type)
 	}
 	o.WithMinProperties(int64(m))
@@ -97,7 +97,7 @@ func (m MinProperties) ApplyToSchema(o *openapi3.Schema) {
 type MaxLength int
 
 func (m MaxLength) ApplyToSchema(o *openapi3.Schema) {
-	if o.Type != "string" {
+	if !o.Type.Is(openapi3.TypeString) {
 		log.Panicf("must apply MaxLength to a string, got %s", o.Type)
 	}
 	o.WithMaxLength(int64(m))
@@ -107,7 +107,7 @@ func (m MaxLength) ApplyToSchema(o *openapi3.Schema) {
 type MinLength int
 
 func (m MinLength) ApplyToSchema(o *openapi3.Schema) {
-	if o.Type != "string" {
+	if !o.Type.Is(openapi3.TypeString) {
 		log.Panicf("must apply MinLength to a string, got %s", o.Type)
 	}
 	o.WithMinLength(int64(m))
@@ -117,7 +117,7 @@ func (m MinLength) ApplyToSchema(o *openapi3.Schema) {
 type Pattern string
 
 func (m Pattern) ApplyToSchema(o *openapi3.Schema) {
-	if o.Type != "string" {
+	if !o.Type.Is(openapi3.TypeString) {
 		log.Panicf("must apply Pattern to a string, got %s", o.Type)
 	}
 	o.WithPattern(string(m))
@@ -127,7 +127,7 @@ func (m Pattern) ApplyToSchema(o *openapi3.Schema) {
 type MaxItems int
 
 func (m MaxItems) ApplyToSchema(o *openapi3.Schema) {
-	if o.Type != "array" {
+	if !o.Type.Is(openapi3.TypeArray) {
 		log.Panicf("must apply MaxItems to an array, got %s", o.Type)
 	}
 	o.WithMaxItems(int64(m))
@@ -137,7 +137,7 @@ func (m MaxItems) ApplyToSchema(o *openapi3.Schema) {
 type MinItems int
 
 func (m MinItems) ApplyToSchema(o *openapi3.Schema) {
-	if o.Type != "array" {
+	if !o.Type.Is(openapi3.TypeArray) {
 		log.Panicf("must apply MinItems to an array, got %s", o.Type)
 	}
 	o.WithMinItems(int64(m))
@@ -147,7 +147,7 @@ func (m MinItems) ApplyToSchema(o *openapi3.Schema) {
 type UniqueItems bool
 
 func (m UniqueItems) ApplyToSchema(o *openapi3.Schema) {
-	if o.Type != "array" {
+	if !o.Type.Is(openapi3.TypeArray) {
 		log.Panicf("must apply UniqueItems to an array, got %s", o.Type)
 	}
 	o.UniqueItems = bool(m)
@@ -182,11 +182,14 @@ const (
 )
 
 func (m Type) ApplyToSchema(o *openapi3.Schema) {
-	// object and value types are special cased in the generator
-	if o.Type == string(TypeObject) || o.Type != string(TypeValue) {
+	if o.Type == nil {
 		return
 	}
-	o.Type = string(m)
+	// object and value types are special cased in the generator
+	if o.Type != nil && (o.Type.Is(openapi3.TypeObject) || !o.Type.Is(string(TypeValue))) {
+		return
+	}
+	o.Type = &openapi3.Types{string(m)}
 }
 
 // PreserveUnknownFields stops the apiserver from pruning fields which are not specified.
@@ -204,12 +207,10 @@ func (m Type) ApplyToSchema(o *openapi3.Schema) {
 type XPreserveUnknownFields struct{}
 
 func (m XPreserveUnknownFields) ApplyToSchema(o *openapi3.Schema) {
-	if o.ExtensionProps.Extensions == nil {
-		o.ExtensionProps = openapi3.ExtensionProps{
-			Extensions: map[string]interface{}{},
-		}
+	if o.Extensions == nil {
+		o.Extensions = map[string]interface{}{}
 	}
-	o.ExtensionProps.Extensions["x-kubernetes-preserve-unknown-fields"] = true
+	o.Extensions["x-kubernetes-preserve-unknown-fields"] = true
 }
 
 // EmbeddedResource marks a fields as an embedded resource with apiVersion, kind and metadata fields.
@@ -221,12 +222,10 @@ func (m XPreserveUnknownFields) ApplyToSchema(o *openapi3.Schema) {
 type XEmbeddedResource struct{}
 
 func (m XEmbeddedResource) ApplyToSchema(o *openapi3.Schema) {
-	if o.ExtensionProps.Extensions == nil {
-		o.ExtensionProps = openapi3.ExtensionProps{
-			Extensions: map[string]interface{}{},
-		}
+	if o.Extensions == nil {
+		o.Extensions = map[string]interface{}{}
 	}
-	o.ExtensionProps.Extensions["x-kubernetes-embedded-resource"] = true
+	o.Extensions["x-kubernetes-embedded-resource"] = true
 }
 
 // IntOrString marks a fields as an IntOrString.
@@ -237,12 +236,10 @@ func (m XEmbeddedResource) ApplyToSchema(o *openapi3.Schema) {
 type XIntOrString struct{}
 
 func (m XIntOrString) ApplyToSchema(o *openapi3.Schema) {
-	if o.ExtensionProps.Extensions == nil {
-		o.ExtensionProps = openapi3.ExtensionProps{
-			Extensions: map[string]interface{}{},
-		}
+	if o.Extensions == nil {
+		o.Extensions = map[string]interface{}{}
 	}
-	o.ExtensionProps.Extensions["x-kubernetes-int-or-string"] = true
+	o.Extensions["x-kubernetes-int-or-string"] = true
 }
 
 // XValidation marks a field as requiring a value for which a given
@@ -258,16 +255,14 @@ type XValidation struct {
 
 func (x XValidation) ApplyToSchema(o *openapi3.Schema) {
 	const validationsHeader = "x-kubernetes-validations"
-	if o.ExtensionProps.Extensions == nil {
-		o.ExtensionProps = openapi3.ExtensionProps{
-			Extensions: map[string]interface{}{
-				validationsHeader: []XValidation{},
-			},
+	if o.Extensions == nil {
+		o.Extensions = map[string]interface{}{
+			validationsHeader: []XValidation{},
 		}
-	} else if o.ExtensionProps.Extensions[validationsHeader] == nil {
-		o.ExtensionProps.Extensions[validationsHeader] = []XValidation{}
+	} else if o.Extensions[validationsHeader] == nil {
+		o.Extensions[validationsHeader] = []XValidation{}
 	}
-	o.ExtensionProps.Extensions[validationsHeader] = append(o.ExtensionProps.Extensions[validationsHeader].([]XValidation), x)
+	o.Extensions[validationsHeader] = append(o.Extensions[validationsHeader].([]XValidation), x)
 }
 
 // Nullable marks this field as allowing the "null" value.
@@ -336,7 +331,7 @@ func (m Required) ApplyToSchema(o *openapi3.Schema) {
 }
 
 func hasNumericType(o *openapi3.Schema) bool {
-	return o.Type == "integer" || o.Type == "number"
+	return o.Type.Is(openapi3.TypeInteger) || o.Type.Is(openapi3.TypeNumber)
 }
 
 func isIntegral(value float64) bool {

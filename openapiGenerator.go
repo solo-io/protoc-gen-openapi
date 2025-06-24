@@ -22,6 +22,7 @@ import (
 	"math"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -33,7 +34,6 @@ import (
 
 	"github.com/solo-io/protoc-gen-openapi/pkg/markers"
 	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
-	"regexp"
 )
 
 var descriptionExclusionMarkers = []string{"$hide_from_docs", "$hide", "@exclude"}
@@ -44,33 +44,27 @@ var descriptionExclusionMarkers = []string{"$hide_from_docs", "$hide", "@exclude
 // The imperfect solution, is to just generate an empty object for these types
 var specialSoloTypes = map[string]openapi3.Schema{
 	"core.solo.io.Metadata": {
-		Type: openapi3.TypeObject,
+		Type: &openapi3.Types{openapi3.TypeObject},
 	},
 	"google.protobuf.ListValue": *openapi3.NewArraySchema().WithItems(openapi3.NewObjectSchema()),
 	"google.protobuf.Struct": {
-		Type:       openapi3.TypeObject,
+		Type:       &openapi3.Types{openapi3.TypeObject},
 		Properties: make(map[string]*openapi3.SchemaRef),
-		ExtensionProps: openapi3.ExtensionProps{
-			Extensions: map[string]interface{}{
-				"x-kubernetes-preserve-unknown-fields": true,
-			},
+		Extensions: map[string]interface{}{
+			"x-kubernetes-preserve-unknown-fields": true,
 		},
 	},
 	"google.protobuf.Any": {
-		Type:       openapi3.TypeObject,
+		Type:       &openapi3.Types{openapi3.TypeObject},
 		Properties: make(map[string]*openapi3.SchemaRef),
-		ExtensionProps: openapi3.ExtensionProps{
-			Extensions: map[string]interface{}{
-				"x-kubernetes-preserve-unknown-fields": true,
-			},
+		Extensions: map[string]interface{}{
+			"x-kubernetes-preserve-unknown-fields": true,
 		},
 	},
 	"google.protobuf.Value": {
 		Properties: make(map[string]*openapi3.SchemaRef),
-		ExtensionProps: openapi3.ExtensionProps{
-			Extensions: map[string]interface{}{
-				"x-kubernetes-preserve-unknown-fields": true,
-			},
+		Extensions: map[string]interface{}{
+			"x-kubernetes-preserve-unknown-fields": true,
 		},
 	},
 	"google.protobuf.BoolValue":   *openapi3.NewBoolSchema().WithNullable(),
@@ -187,12 +181,10 @@ func buildCustomSchemasByMessageName(messagesWithEmptySchema []string) map[strin
 	// Add the messages that were injected at runtime
 	for _, messageName := range messagesWithEmptySchema {
 		emptyMessage := openapi3.Schema{
-			Type:       openapi3.TypeObject,
+			Type:       &openapi3.Types{openapi3.TypeObject},
 			Properties: make(map[string]*openapi3.SchemaRef),
-			ExtensionProps: openapi3.ExtensionProps{
-				Extensions: map[string]interface{}{
-					"x-kubernetes-preserve-unknown-fields": true,
-				},
+			Extensions: map[string]interface{}{
+				"x-kubernetes-preserve-unknown-fields": true,
 			},
 		}
 		schemasByMessageName[messageName] = emptyMessage
@@ -371,7 +363,7 @@ func (g *openapiGenerator) generateFile(name string,
 			Title:   description,
 			Version: version,
 		},
-		Components: c,
+		Components: &c,
 	}
 
 	g.buffer.Reset()
@@ -413,10 +405,8 @@ func (g *openapiGenerator) generateSoloMessageSchema(message *protomodel.Message
 
 func (g *openapiGenerator) generateSoloInt64Schema() *openapi3.Schema {
 	schema := openapi3.NewInt64Schema()
-	schema.ExtensionProps = openapi3.ExtensionProps{
-		Extensions: map[string]interface{}{
-			"x-kubernetes-int-or-string": true,
-		},
+	schema.Extensions = map[string]interface{}{
+		"x-kubernetes-int-or-string": true,
 	}
 
 	return schema
@@ -597,10 +587,8 @@ func (g *openapiGenerator) generateEnumSchema(enum *protomodel.EnumDescriptor) *
 
 	// If the schema should be int or string, mark it as such
 	if g.enumAsIntOrString {
-		o.ExtensionProps = openapi3.ExtensionProps{
-			Extensions: map[string]interface{}{
-				"x-kubernetes-int-or-string": true,
-			},
+		o.Extensions = map[string]interface{}{
+			"x-kubernetes-int-or-string": true,
 		}
 		return o
 	}
@@ -610,7 +598,7 @@ func (g *openapiGenerator) generateEnumSchema(enum *protomodel.EnumDescriptor) *
 	for _, v := range values {
 		o.Enum = append(o.Enum, v.GetName())
 	}
-	o.Type = "string"
+	o.Type = &openapi3.Types{openapi3.TypeString}
 
 	return o
 }
@@ -778,7 +766,7 @@ func (g *openapiGenerator) fieldType(field *protomodel.FieldDescriptor) *openapi
 				schema = openapi3.NewObjectSchema()
 				// in `$ref`, the value of the schema is not in the output.
 				sr.Value = nil
-				schema.AdditionalProperties = sr
+				schema.AdditionalProperties = openapi3.AdditionalProperties{Schema: sr}
 			} else {
 				schema = openapi3.NewObjectSchema().WithAdditionalProperties(sr.Value)
 			}
