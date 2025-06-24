@@ -446,9 +446,7 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 			tmp := getSoloSchemaForMarkerType(schemaType)
 			schema := getSchemaIfRepeated(&tmp, repeated)
 			schema.Description = fieldDesc
-			// Filter out Type markers since we've already applied the type
-			filteredRules := g.filterOutTypeMarkers(fieldRules)
-			g.mustApplyRulesToSchema(filteredRules, schema, markers.TargetField)
+			g.mustApplyRulesToSchema(fieldRules, schema, markers.TargetField)
 			o.WithProperty(fieldName, schema)
 			continue
 		}
@@ -829,14 +827,4 @@ func isIgnoredKubeMarker(regexp *regexp.Regexp, l string) bool {
 	}
 
 	return regexp.MatchString(l)
-}
-
-func (g *openapiGenerator) filterOutTypeMarkers(rules []string) []string {
-	var filteredRules []string
-	for _, rule := range rules {
-		if !strings.HasPrefix(rule, "+kubebuilder:validation:Type") {
-			filteredRules = append(filteredRules, rule)
-		}
-	}
-	return filteredRules
 }
