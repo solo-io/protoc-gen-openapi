@@ -66,7 +66,7 @@ func (m MultipleOf) ApplyToSchema(o *openapi3.Schema) {
 	if !hasNumericType(o) {
 		log.Panicf("must apply MultipleOf to a numeric type, got %s", o.Type)
 	}
-	if o.Type.Is("integer") && !isIntegral(m.Value()) {
+	if o.Type.Is(openapi3.TypeInteger) && !isIntegral(m.Value()) {
 		log.Panicf("cannot apply non-integral MultipleOf validation (%v) to integer value", m.Value())
 	}
 	val := m.Value()

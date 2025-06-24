@@ -22,6 +22,7 @@ import (
 	"math"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -30,8 +31,6 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 	kubemarkers "sigs.k8s.io/controller-tools/pkg/markers"
-
-	"regexp"
 
 	"github.com/solo-io/protoc-gen-openapi/pkg/markers"
 	"github.com/solo-io/protoc-gen-openapi/pkg/protomodel"
