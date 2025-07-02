@@ -19,7 +19,7 @@ build: install-deps
 run:
 	rm -fr $(OUTPUTDIR)
 	mkdir -p $(OUTPUTDIR)
-        protoc --plugin=./$(BINDIR)/protoc-gen-openapi --openapi_out=single_file=true,use_ref=true:$(OUTPUTDIR)/. -Itestdata testdata/testpkg/test1.proto testdata/testpkg/test2.proto testdata/testpkg/test6.proto testdata/testpkg2/test3.proto testdata/testpkg/test_proto3_optional.proto
+	protoc --plugin=./$(BINDIR)/protoc-gen-openapi --openapi_out=single_file=true,use_ref=true:$(OUTPUTDIR)/. -Itestdata testdata/testpkg/test1.proto testdata/testpkg/test2.proto testdata/testpkg/test6.proto testdata/testpkg2/test3.proto testdata/testpkg/test_proto3_optional.proto
 
 gotest:
 	PATH=$(BINDIR):$(PATH) go test -v ./...
