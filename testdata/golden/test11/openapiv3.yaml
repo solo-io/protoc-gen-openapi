@@ -1,0 +1,35 @@
+components:
+  schemas:
+    test11.AnotherEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      type: integer
+      x-enum-values:
+      - ANOTHER_UNSPECIFIED
+      - ANOTHER_SOME_NAME
+      - ANOTHER_ANOTHER_NAME
+      x-enumNames:
+      - ANOTHER_UNSPECIFIED
+      - ANOTHER_SOME_NAME
+      - ANOTHER_ANOTHER_NAME
+    test11.MyProtoEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      type: integer
+      x-enum-values:
+      - MY_PROTO_UNSPECIFIED
+      - MY_PROTO_SOME_NAME
+      - MY_PROTO_ANOTHER_NAME
+      x-enumNames:
+      - MY_PROTO_UNSPECIFIED
+      - MY_PROTO_SOME_NAME
+      - MY_PROTO_ANOTHER_NAME
+info:
+  title: OpenAPI Spec for Solo APIs.
+  version: ""
+openapi: 3.0.1
+paths: null
