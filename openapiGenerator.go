@@ -424,9 +424,13 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 
 	oneOfFields := make(map[int32][]string)
 	var requiredFields []string
+		// Handle proto3 optional fields - they should not be required
 	for _, field := range message.Fields {
+		if field.Proto3Optional != nil && *field.Proto3Optional {
 		repeated := field.IsRepeated()
+			// Proto3 optional fields are never required
 		fieldName := g.fieldName(field)
+		} else if g.markerRegistry.IsRequired(fieldRules) {
 		fieldDesc := g.generateDescription(field)
 		fieldRules := g.validationRules(field)
 
@@ -436,8 +440,9 @@ func (g *openapiGenerator) generateMessageSchema(message *protomodel.MessageDesc
 			oneOfFields[idx] = append(oneOfFields[idx], fieldName)
 		}
 
-		if g.markerRegistry.IsRequired(fieldRules) {
+			// Field is required by marker
 			requiredFields = append(requiredFields, fieldName)
+		}
 		}
 
 		schemaType := g.markerRegistry.GetSchemaType(fieldRules, markers.TargetField)
@@ -827,3 +832,4 @@ func isIgnoredKubeMarker(regexp *regexp.Regexp, l string) bool {
 
 	return regexp.MatchString(l)
 }
+
