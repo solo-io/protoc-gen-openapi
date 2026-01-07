@@ -51,10 +51,12 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 	includeDescription := true
 	multilineDescription := false
 	enumAsIntOrString := false
+	enumAsInt := false
 	protoOneof := false
 	intNative := false
 	disableKubeMarkers := false
 
+	var enumNamesExtensions []string
 	var messagesWithEmptySchema []string
 	var ignoredKubeMarkerSubstrings []string
 
@@ -118,6 +120,20 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 				enumAsIntOrString = false
 			default:
 				return nil, fmt.Errorf("unknown value '%s' for enum_as_int_or_string", v)
+			}
+		} else if k == "use_int_enums" {
+			switch strings.ToLower(v) {
+			case "true":
+				enumAsInt = true
+			case "false":
+				enumAsInt = false
+			default:
+				return nil, fmt.Errorf("unknown value '%s' for enum_as_int", v)
+			}
+		} else if k == "enum_names_extensions" {
+			enumNamesExtensions = strings.Split(v, ";")
+			if len(enumNamesExtensions) == 0 {
+				return nil, fmt.Errorf("cant use '%s' as enum_names_extensions, provide a semicolon separated list", v)
 			}
 		} else if k == "proto_oneof" {
 			switch strings.ToLower(v) {
@@ -185,6 +201,8 @@ func generate(request pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRes
 		useRef,
 		descriptionConfiguration,
 		enumAsIntOrString,
+		enumAsInt,
+		enumNamesExtensions,
 		messagesWithEmptySchema,
 		protoOneof,
 		intNative,

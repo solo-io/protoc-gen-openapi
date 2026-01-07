@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package test11;
+
+enum MyProtoEnum {
+  MY_PROTO_UNSPECIFIED = 0;
+  MY_PROTO_SOME_NAME = 1;
+  MY_PROTO_ANOTHER_NAME = 2;
+}
+
+enum AnotherEnum {
+  ANOTHER_UNSPECIFIED = 0;
+  ANOTHER_SOME_NAME = 1;
+  ANOTHER_ANOTHER_NAME = 2;
+}

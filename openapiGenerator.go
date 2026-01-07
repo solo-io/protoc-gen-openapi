@@ -101,6 +101,10 @@ type openapiGenerator struct {
 	// we need to support this since some controllers marshal enums as integers and others as strings
 	enumAsIntOrString bool
 
+	enumsAsInt bool
+
+	enumNamesExtensions []string
+
 	// @solo.io customizations to define schemas for certain messages
 	customSchemasByMessageName map[string]openapi3.Schema
 
@@ -138,6 +142,8 @@ func newOpenAPIGenerator(
 	useRef bool,
 	descriptionConfiguration *DescriptionConfiguration,
 	enumAsIntOrString bool,
+	enumAsInt bool,
+	enumNamesExtensions []string,
 	messagesWithEmptySchema []string,
 	protoOneof bool,
 	intNative bool,
@@ -156,6 +162,8 @@ func newOpenAPIGenerator(
 		useRef:                      useRef,
 		descriptionConfiguration:    descriptionConfiguration,
 		enumAsIntOrString:           enumAsIntOrString,
+		enumsAsInt:                  enumAsInt,
+		enumNamesExtensions:         enumNamesExtensions,
 		customSchemasByMessageName:  buildCustomSchemasByMessageName(messagesWithEmptySchema),
 		protoOneof:                  protoOneof,
 		intNative:                   intNative,
@@ -569,6 +577,14 @@ func (g *openapiGenerator) generateEnum(enum *protomodel.EnumDescriptor, allSche
 }
 
 func (g *openapiGenerator) generateEnumSchema(enum *protomodel.EnumDescriptor) *openapi3.Schema {
+	if !g.enumsAsInt {
+		g.generateStringEnum(enum)
+	}
+
+	return g.generateIntEnum(enum)
+}
+
+func (g *openapiGenerator) generateStringEnum(enum *protomodel.EnumDescriptor) *openapi3.Schema {
 	/**
 	  The out of the box solution created an enum like:
 	  	enum:
@@ -599,6 +615,23 @@ func (g *openapiGenerator) generateEnumSchema(enum *protomodel.EnumDescriptor) *
 		o.Enum = append(o.Enum, v.GetName())
 	}
 	o.Type = &openapi3.Types{openapi3.TypeString}
+	return o
+}
+
+func (g *openapiGenerator) generateIntEnum(enum *protomodel.EnumDescriptor) *openapi3.Schema {
+	o := openapi3.NewIntegerSchema()
+	o.Description = g.generateDescription(enum)
+
+	values := enum.GetValue()
+	var names []string
+	for _, v := range values {
+		o.Enum = append(o.Enum, v.GetNumber())
+		names = append(names, v.GetName())
+	}
+	o.Extensions = make(map[string]interface{})
+	for _, extensionName := range g.enumNamesExtensions {
+		o.Extensions[extensionName] = names
+	}
 
 	return o
 }

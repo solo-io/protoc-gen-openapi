@@ -139,6 +139,16 @@ func TestOpenAPIGeneration(t *testing.T) {
 			},
 			wantFiles: []string{"test10/openapiv3.yaml"},
 		},
+		{
+			name:       "Test enum with x-enumNames",
+			id:         "test11",
+			perPackage: false,
+			genOpts:    "yaml=true,single_file=true,use_int_enums=true,enum_names_extensions=x-enumNames;x-enum-values",
+			inputFiles: map[string][]string{
+				"test11": {"./testdata/test11/enums.proto"},
+			},
+			wantFiles: []string{"test11/openapiv3.yaml"},
+		},
 	}
 
 	for _, tc := range testcases {
